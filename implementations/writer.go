@@ -3,9 +3,9 @@ package implementations
 import (
 	"fmt"
 	"github.com/JosephNaberhaus/agnostic"
+	"github.com/JosephNaberhaus/agnostic/implementations/code"
 	"github.com/JosephNaberhaus/agnostic/implementations/golang"
 	"github.com/JosephNaberhaus/agnostic/implementations/typescript"
-	"github.com/JosephNaberhaus/agnostic/implementations/writer"
 	"io/ioutil"
 	"os"
 	"path/filepath"

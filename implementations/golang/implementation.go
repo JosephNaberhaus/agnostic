@@ -3,7 +3,7 @@ package golang
 import (
 	"fmt"
 	"github.com/JosephNaberhaus/agnostic"
-	"github.com/JosephNaberhaus/agnostic/implementations/writer"
+	"github.com/JosephNaberhaus/agnostic/implementations/code"
 	"github.com/JosephNaberhaus/agnostic/utils"
 	"io/ioutil"
 	"path/filepath"
