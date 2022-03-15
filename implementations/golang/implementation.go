@@ -36,17 +36,17 @@ func primitiveTypeString(primitiveType agnostic.PrimitiveType) string {
 	}
 }
 
-func (p *modelWriter) typeString(_type agnostic.Type) string {
+func (m *modelWriter) typeString(_type agnostic.Type) string {
 	switch t := _type.(type) {
 	case agnostic.PrimitiveType:
 		return primitiveTypeString(t)
 	case agnostic.ArrayType:
-		return "[]" + p.typeString(t.ElementType)
+		return "[]" + m.typeString(t.ElementType)
 	case agnostic.MapType:
-		return "map[" + p.typeString(t.KeyType) + "]" + p.typeString(t.ValueType)
+		return "map[" + m.typeString(t.KeyType) + "]" + m.typeString(t.ValueType)
 	case agnostic.ModelType:
-		p.referencedModels = append(p.referencedModels, t.Model)
-		return filepath.Base(t.Model.Package.Path) + "." + t.Model.Name
+		m.referencedModels = append(m.referencedModels, t.Model)
+		return filepath.Base(t.Model.Path) + "." + t.Model.Name
 	default:
 		panic(fmt.Errorf("unkown type: \"%v\"", _type))
 	}
@@ -96,7 +96,7 @@ func (m *modelWriter) valueString(value agnostic.Value) string {
 	case agnostic.MapElementValue:
 		return m.valueString(v.Map) + "[" + m.valueString(v.Key) + "]"
 	case agnostic.FieldValue:
-		return m.valueString(v.Model) + "." + v.FieldName
+		return m.valueString(v.Model) + "." + v.FieldName + "()"
 	case agnostic.VariableValue:
 		return string(v)
 	case agnostic.ThisValue:
@@ -112,8 +112,10 @@ func (m *modelWriter) statementCode(statement agnostic.Statement) writer.Code {
 	switch s := statement.(type) {
 	case agnostic.Declare:
 		return writer.Line(s.Name + " := " + m.valueString(s.Value))
-	case agnostic.Assign:
-		return writer.Line(m.valueString(s.Left) + " = " + m.valueString(s.Right))
+	case agnostic.AssignVar:
+		return writer.Line(m.valueString(s.Var) + " = " + m.valueString(s.Value))
+	case agnostic.AssignField:
+		return writer.Line(m.valueString(s.Model) + ".Set" + s.FieldName + "(" + m.valueString(s.Value) + ")")
 	case agnostic.AppendValue:
 		arrayValueString := m.valueString(s.Array)
 		return writer.Line(arrayValueString + " = append(" + arrayValueString + ", " + m.valueString(s.ToAppend) + ")")
@@ -189,14 +191,42 @@ func (m *modelWriter) methodCode(method agnostic.Method) writer.Group {
 	}
 }
 
+func fieldName(field agnostic.Field) string {
+	return strings.ToLower(field.Name[:1]) + field.Name[1:]
+}
+
+func (m *modelWriter) fieldCode(field agnostic.Field) writer.Code {
+	return writer.Line(fieldName(field) + " " + m.typeString(field.Type))
+}
+
+func (m *modelWriter) fieldGetterSetterCode(field agnostic.Field) writer.Code {
+	methodName := strings.ToUpper(field.Name[:1]) + field.Name[1:]
+
+	return writer.Group{
+		writer.Line("func (" + m.receiverName() + " *" + m.model.Name + ") " + methodName + "() " + m.typeString(field.Type) + " {"),
+		writer.Block{
+			writer.Line("return " + m.receiverName() + "." + fieldName(field)),
+		},
+		writer.Line("}"),
+		writer.Line(""),
+		writer.Line("func (" + m.receiverName() + " *" + m.model.Name + ") Set" + methodName + "(newValue " + m.typeString(field.Type) + ") " + " {"),
+		writer.Block{
+			writer.Line(m.receiverName() + "." + fieldName(field) + " = newValue"),
+		},
+		writer.Line("}"),
+	}
+}
+
 func ModelCode(model agnostic.Model) (writer.Code, error) {
 	modelWriter := modelWriter{
 		model: model,
 	}
 
 	fieldsCode := make([]writer.Code, 0, len(model.Fields))
+	fieldGettersCode := make([]writer.Code, 0)
 	for _, field := range model.Fields {
-		fieldsCode = append(fieldsCode, writer.Line(field.Name+" "+modelWriter.typeString(field.Type)))
+		fieldsCode = append(fieldsCode, modelWriter.fieldCode(field))
+		fieldGettersCode = append(fieldGettersCode, modelWriter.fieldGetterSetterCode(field))
 	}
 
 	methodsCode := make([]writer.Code, 0, len(model.Methods))
@@ -206,7 +236,7 @@ func ModelCode(model agnostic.Model) (writer.Code, error) {
 
 	importsCode := make([]writer.Code, 0, len(modelWriter.referencedModels))
 	for _, referencedModel := range modelWriter.referencedModels {
-		path, err := packageImportPath(referencedModel.Package)
+		path, err := modelImportPath(referencedModel)
 		if err != nil {
 			return nil, err
 		}
@@ -215,7 +245,7 @@ func ModelCode(model agnostic.Model) (writer.Code, error) {
 	}
 
 	return writer.Group{
-		writer.Line("package " + filepath.Base(model.Package.Path)),
+		writer.Line("package " + filepath.Base(model.Path)),
 		writer.Line(""),
 		writer.Line("import ("),
 		writer.Block(importsCode),
@@ -225,14 +255,16 @@ func ModelCode(model agnostic.Model) (writer.Code, error) {
 		writer.Block(fieldsCode),
 		writer.Line("}"),
 		writer.Line(""),
+		writer.Group(fieldGettersCode),
+		writer.Line(""),
 		writer.Group(methodsCode),
 	}, nil
 }
 
-func packageImportPath(p *agnostic.Package) (string, error) {
-	root, err := goModRoot(p.Path)
+func modelImportPath(m agnostic.Model) (string, error) {
+	root, err := goModRoot(m.Path)
 	if err != nil {
-		return "", fmt.Errorf("no go mod root found for package at %s: %w", p.Path, err)
+		return "", fmt.Errorf("no go mod root found for model at %s: %w", m.Path, err)
 	}
 
 	goModFilePath := filepath.Join(root, "go.mod")
@@ -248,9 +280,9 @@ func packageImportPath(p *agnostic.Package) (string, error) {
 	}
 
 	modulePath := string(match[1])
-	moduleRelativePath, err := filepath.Rel(root, p.Path)
+	moduleRelativePath, err := filepath.Rel(root, m.Path)
 	if err != nil {
-		return "", fmt.Errorf("couldn't find a relative path from \"%s\" to \"%s\"", root, p.Path)
+		return "", fmt.Errorf("couldn't find a relative path from \"%s\" to \"%s\"", root, m.Path)
 	}
 
 	return modulePath + "/" + moduleRelativePath, nil

@@ -24,6 +24,11 @@ type Block []Code
 // isCode implements the Code interface so that Block can be used as Code
 func (b Block) isCode() {}
 
+type Nil struct{}
+
+// isCode implements the Code interface so that Nil can be used as Code
+func (n Nil) isCode() {}
+
 func CodeString(code Code, indent int) string {
 	switch c := code.(type) {
 	case Line:
@@ -40,6 +45,8 @@ func CodeString(code Code, indent int) string {
 			sb.WriteString(CodeString(child, indent+2))
 		}
 		return sb.String()
+	case Nil:
+		return ""
 	default:
 		panic(fmt.Errorf("unkown code \"%v\"", code))
 	}

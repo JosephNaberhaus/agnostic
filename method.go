@@ -13,12 +13,21 @@ type Declare struct {
 // isStatement implements the Statement interface so that Declare can be used as a Statement
 func (d Declare) isStatement() {}
 
-type Assign struct {
-	Left, Right Value
+type AssignVar struct {
+	Var, Value Value
 }
 
-// isStatement implements the Statement interface so that Assign can be used as a Statement
-func (a Assign) isStatement() {}
+// isStatement implements the Statement interface so that AssignVar can be used as a Statement
+func (a AssignVar) isStatement() {}
+
+type AssignField struct {
+	Model     Value
+	FieldName string
+	Value     Value
+}
+
+// isStatement implements the Statement interface so that AssignField can be used as a Statement
+func (a AssignField) isStatement() {}
 
 type AppendValue struct {
 	Array    Value

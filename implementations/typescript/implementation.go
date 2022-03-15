@@ -39,7 +39,38 @@ func (m *modelWriter) typeString(_type agnostic.Type) string {
 		return "Map<" + m.typeString(t.KeyType) + ", " + m.typeString(t.ValueType) + ">"
 	case agnostic.ModelType:
 		m.referencedModels = append(m.referencedModels, t.Model)
-		return filepath.Base(t.Model.Package.Path) + "." + t.Model.Name
+		return filepath.Base(m.model.Path) + "." + t.Model.Name
+	default:
+		panic(fmt.Errorf("unkown type: \"%v\"", _type))
+	}
+}
+
+func primitiveTypeZeroValue(primitiveType agnostic.PrimitiveType) string {
+	switch primitiveType {
+	case agnostic.BooleanType:
+		return "false"
+	case agnostic.IntType:
+		fallthrough
+	case agnostic.FloatType:
+		return "0"
+	case agnostic.StringType:
+		return `""`
+	default:
+		panic(fmt.Errorf("unkown primitive type: \"%v\"", primitiveType))
+	}
+}
+
+func (m *modelWriter) typeZeroValue(_type agnostic.Type) string {
+	switch t := _type.(type) {
+	case agnostic.PrimitiveType:
+		return primitiveTypeZeroValue(t)
+	case agnostic.ArrayType:
+		return "[]"
+	case agnostic.MapType:
+		return "new Map<>()"
+	case agnostic.ModelType:
+		m.referencedModels = append(m.referencedModels, t.Model)
+		return "new " + t.Model.Name + "()"
 	default:
 		panic(fmt.Errorf("unkown type: \"%v\"", _type))
 	}
@@ -105,8 +136,10 @@ func (m *modelWriter) statementCode(statement agnostic.Statement) writer.Code {
 	switch s := statement.(type) {
 	case agnostic.Declare:
 		return writer.Line("let " + s.Name + " = " + m.valueString(s.Value) + ";")
-	case agnostic.Assign:
-		return writer.Line(m.valueString(s.Left) + " = " + m.valueString(s.Right) + ";")
+	case agnostic.AssignVar:
+		return writer.Line(m.valueString(s.Var) + " = " + m.valueString(s.Value) + ";")
+	case agnostic.AssignField:
+		return writer.Line(m.valueString(s.Model) + "." + s.FieldName + " = " + m.valueString(s.Value))
 	case agnostic.AppendValue:
 		return writer.Line(m.valueString(s.Array) + ".push(" + m.valueString(s.ToAppend) + ");")
 	case agnostic.AppendArray:
@@ -120,20 +153,20 @@ func (m *modelWriter) statementCode(statement agnostic.Statement) writer.Code {
 	case agnostic.ForEach:
 		return writer.Group{
 			writer.Line(m.valueString(s.Array) + ".foreach((" + s.ValueVariableName + ", " + s.IndexVariableName + ") => {"),
-			writer.Block(m.statementsCode(s.Statements)),
+			m.statementsCode(s.Statements),
 			writer.Line("});"),
 		}
 	case agnostic.If:
 		return writer.Group{
 			writer.Line("if (" + m.valueString(s.Condition) + ") {"),
-			writer.Block(m.statementsCode(s.Statements)),
+			m.statementsCode(s.Statements),
 		}
 	case agnostic.IfElse:
 		return writer.Group{
 			writer.Line("if (" + m.valueString(s.Condition) + ") {"),
-			writer.Block(m.statementsCode(s.TrueStatements)),
+			m.statementsCode(s.TrueStatements),
 			writer.Line("} else {"),
-			writer.Block(m.statementsCode(s.FalseStatements)),
+			m.statementsCode(s.FalseStatements),
 			writer.Line("}"),
 		}
 	case agnostic.Return:
@@ -143,13 +176,13 @@ func (m *modelWriter) statementCode(statement agnostic.Statement) writer.Code {
 	}
 }
 
-func (m *modelWriter) statementsCode(statements []agnostic.Statement) []writer.Code {
+func (m *modelWriter) statementsCode(statements []agnostic.Statement) writer.Code {
 	code := make([]writer.Code, 0, len(statements))
 	for _, statement := range statements {
 		code = append(code, m.statementCode(statement))
 	}
 
-	return code
+	return writer.Group(code)
 }
 
 func (m *modelWriter) methodCode(method agnostic.Method) writer.Group {
@@ -170,7 +203,38 @@ func (m *modelWriter) methodCode(method agnostic.Method) writer.Group {
 
 	return writer.Group{
 		writer.Line(method.Name + "(" + parameters.String() + "): " + returnType + " {"),
-		writer.Block(m.statementsCode(method.Statements)),
+		writer.Block{
+			m.statementsCode(method.Statements),
+		},
+		writer.Line("}"),
+		writer.Line(""),
+	}
+}
+
+func (m *modelWriter) fieldCode(field agnostic.Field) writer.Code {
+	getterAccessModifier := "public"
+	if field.Access == agnostic.Private {
+		getterAccessModifier = "private"
+	}
+
+	setterAccessModifier := "private"
+	if field.Access == agnostic.Public {
+		setterAccessModifier = "public"
+	}
+
+	return writer.Group{
+		writer.Line("private _" + field.Name + ": " + m.typeString(field.Type) + " = " + m.typeZeroValue(field.Type) + ";"),
+		writer.Line(""),
+		writer.Line(getterAccessModifier + " get " + field.Name + "() {"),
+		writer.Block{
+			writer.Line("return this._" + field.Name + ";"),
+		},
+		writer.Line("}"),
+		writer.Line(""),
+		writer.Line(setterAccessModifier + " set " + field.Name + "(newValue: " + m.typeString(field.Type) + ") {"),
+		writer.Block{
+			writer.Line("this._" + field.Name + " = newValue;"),
+		},
 		writer.Line("}"),
 		writer.Line(""),
 	}
@@ -183,7 +247,7 @@ func ModelCode(model agnostic.Model) (writer.Code, error) {
 
 	fieldsCode := make([]writer.Code, 0, len(model.Fields))
 	for _, field := range model.Fields {
-		fieldsCode = append(fieldsCode, writer.Line("private "+field.Name+": "+modelWriter.typeString(field.Type)+";"))
+		fieldsCode = append(fieldsCode, modelWriter.fieldCode(field))
 	}
 
 	methodsCode := make([]writer.Code, 0, len(model.Methods))
@@ -205,18 +269,20 @@ func ModelCode(model agnostic.Model) (writer.Code, error) {
 		writer.Group(importsCode),
 		writer.Line(""),
 		writer.Line("export class " + model.Name + " {"),
-		writer.Block(fieldsCode),
-		writer.Block(methodsCode),
+		writer.Block{
+			writer.Group(fieldsCode),
+			writer.Group(methodsCode),
+		},
 		writer.Line("}"),
 		writer.Line(""),
 	}, nil
 }
 
 func modelImport(cur, target agnostic.Model) (writer.Code, error) {
-	packageRelativePath, err := filepath.Rel(cur.Package.Path, target.Package.Path)
+	relativePath, err := filepath.Rel(cur.Path, target.Path)
 	if err != nil {
-		return nil, fmt.Errorf("error finding a path from \"%s\" to \"%s\": %w", cur.Package.Path, target.Package.Path, err)
+		return nil, fmt.Errorf("error finding a path from \"%s\" to \"%s\": %w", cur.Path, target.Path, err)
 	}
 
-	return writer.Line("import {" + target.Name + "} from \"" + filepath.Join(packageRelativePath, target.Name) + "\";"), nil
+	return writer.Line("import {" + target.Name + "} from \"" + filepath.Join(relativePath, target.Name) + "\";"), nil
 }
