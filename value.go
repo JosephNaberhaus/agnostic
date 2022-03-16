@@ -49,15 +49,15 @@ type FieldValue struct {
 // isValue implements the Value interface so that FieldValue can be used as a Value
 func (f FieldValue) isValue() {}
 
+type OwnField string
+
+// isValue implements the Value interface so that OwnField can be used as a Value
+func (o OwnField) isValue() {}
+
 type VariableValue string
 
 // isValue implements the Value interface so that VariableValue can be used as a Value
 func (v VariableValue) isValue() {}
-
-type ThisValue struct{}
-
-// isValue implements the Value interface so that ThisValue can be used as a Value
-func (t ThisValue) isValue() {}
 
 type Operator int
 

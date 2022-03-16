@@ -120,11 +120,11 @@ func (m *modelWriter) valueString(value agnostic.Value) string {
 	case agnostic.MapElementValue:
 		return m.valueString(v.Map) + "[" + m.valueString(v.Key) + "]"
 	case agnostic.FieldValue:
-		return m.valueString(v.Model) + "." + v.FieldName
+		return m.valueString(v.Model) + "." + fieldName(v.FieldName)
+	case agnostic.OwnField:
+		return "this." + fieldName(string(v))
 	case agnostic.VariableValue:
 		return string(v)
-	case agnostic.ThisValue:
-		return "this"
 	case agnostic.ComputedValue:
 		return m.valueString(v.Left) + " " + operatorString(v.Operator) + " " + m.valueString(v.Right)
 	default:
@@ -139,7 +139,9 @@ func (m *modelWriter) statementCode(statement agnostic.Statement) writer.Code {
 	case agnostic.AssignVar:
 		return writer.Line(m.valueString(s.Var) + " = " + m.valueString(s.Value) + ";")
 	case agnostic.AssignField:
-		return writer.Line(m.valueString(s.Model) + "." + s.FieldName + " = " + m.valueString(s.Value))
+		return writer.Line(m.valueString(s.Model) + "." + fieldName(s.FieldName) + " = " + m.valueString(s.Value))
+	case agnostic.AssignOwnField:
+		return writer.Line("this." + fieldName(s.FieldName) + " = " + m.valueString(s.Value))
 	case agnostic.AppendValue:
 		return writer.Line(m.valueString(s.Array) + ".push(" + m.valueString(s.ToAppend) + ");")
 	case agnostic.AppendArray:
@@ -223,17 +225,17 @@ func (m *modelWriter) fieldCode(field agnostic.Field) writer.Code {
 	}
 
 	return writer.Group{
-		writer.Line("private _" + field.Name + ": " + m.typeString(field.Type) + " = " + m.typeZeroValue(field.Type) + ";"),
+		writer.Line("private _" + fieldName(field.Name) + ": " + m.typeString(field.Type) + " = " + m.typeZeroValue(field.Type) + ";"),
 		writer.Line(""),
-		writer.Line(getterAccessModifier + " get " + field.Name + "() {"),
+		writer.Line(getterAccessModifier + " get " + fieldName(field.Name) + "() {"),
 		writer.Block{
-			writer.Line("return this._" + field.Name + ";"),
+			writer.Line("return this._" + fieldName(field.Name) + ";"),
 		},
 		writer.Line("}"),
 		writer.Line(""),
-		writer.Line(setterAccessModifier + " set " + field.Name + "(newValue: " + m.typeString(field.Type) + ") {"),
+		writer.Line(setterAccessModifier + " set " + fieldName(field.Name) + "(newValue: " + m.typeString(field.Type) + ") {"),
 		writer.Block{
-			writer.Line("this._" + field.Name + " = newValue;"),
+			writer.Line("this._" + fieldName(field.Name) + " = newValue;"),
 		},
 		writer.Line("}"),
 		writer.Line(""),
@@ -276,6 +278,10 @@ func ModelCode(model agnostic.Model) (writer.Code, error) {
 		writer.Line("}"),
 		writer.Line(""),
 	}, nil
+}
+
+func fieldName(name string) string {
+	return strings.ToLower(name[:1]) + name[1:]
 }
 
 func modelImport(cur, target agnostic.Model) (writer.Code, error) {

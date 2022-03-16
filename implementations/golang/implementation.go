@@ -96,11 +96,11 @@ func (m *modelWriter) valueString(value agnostic.Value) string {
 	case agnostic.MapElementValue:
 		return m.valueString(v.Map) + "[" + m.valueString(v.Key) + "]"
 	case agnostic.FieldValue:
-		return m.valueString(v.Model) + "." + v.FieldName + "()"
+		return m.valueString(v.Model) + "." + fieldMethodName(v.FieldName) + "()"
+	case agnostic.OwnField:
+		return m.receiverName() + "." + fieldName(string(v))
 	case agnostic.VariableValue:
 		return string(v)
-	case agnostic.ThisValue:
-		return m.receiverName()
 	case agnostic.ComputedValue:
 		return m.valueString(v.Left) + " " + operatorString(v.Operator) + " " + m.valueString(v.Right)
 	default:
@@ -111,11 +111,16 @@ func (m *modelWriter) valueString(value agnostic.Value) string {
 func (m *modelWriter) statementCode(statement agnostic.Statement) writer.Code {
 	switch s := statement.(type) {
 	case agnostic.Declare:
-		return writer.Line(s.Name + " := " + m.valueString(s.Value))
+		return writer.Group{
+			writer.Line(s.Name + " := " + m.valueString(s.Value)),
+			writer.Line("_ = " + s.Name),
+		}
 	case agnostic.AssignVar:
 		return writer.Line(m.valueString(s.Var) + " = " + m.valueString(s.Value))
 	case agnostic.AssignField:
-		return writer.Line(m.valueString(s.Model) + ".Set" + s.FieldName + "(" + m.valueString(s.Value) + ")")
+		return writer.Line(m.valueString(s.Model) + ".Set" + fieldMethodName(s.FieldName) + "(" + m.valueString(s.Value) + ")")
+	case agnostic.AssignOwnField:
+		return writer.Line(m.receiverName() + "." + fieldName(s.FieldName) + " = " + m.valueString(s.Value))
 	case agnostic.AppendValue:
 		arrayValueString := m.valueString(s.Array)
 		return writer.Line(arrayValueString + " = append(" + arrayValueString + ", " + m.valueString(s.ToAppend) + ")")
@@ -135,7 +140,10 @@ func (m *modelWriter) statementCode(statement agnostic.Statement) writer.Code {
 	case agnostic.ForEach:
 		return writer.Group{
 			writer.Line("for "+s.IndexVariableName+", "+s.ValueVariableName+" := range "+m.valueString(s.Array)) + " {",
-			writer.Block(m.statementsCode(s.Statements)),
+			writer.Block{
+				writer.Line("_, _ = " + s.IndexVariableName + ", " + s.ValueVariableName),
+				writer.Group(m.statementsCode(s.Statements)),
+			},
 			writer.Line("}"),
 		}
 	case agnostic.If:
@@ -174,6 +182,7 @@ func (m *modelWriter) methodCode(method agnostic.Method) writer.Group {
 	}
 
 	parameters := strings.Builder{}
+	useParametersCode := make([]writer.Code, 0, len(method.Parameters))
 	for i, parameter := range method.Parameters {
 		parameters.WriteString(parameter.Name)
 		parameters.WriteString(" ")
@@ -181,40 +190,58 @@ func (m *modelWriter) methodCode(method agnostic.Method) writer.Group {
 		if i+1 != len(method.Parameters) {
 			parameters.WriteString(", ")
 		}
+
+		useParametersCode = append(useParametersCode, writer.Line("_ = "+parameter.Name))
 	}
 
 	return writer.Group{
 		writer.Line("func (" + m.receiverName() + " *" + m.model.Name + ") " + method.Name + "(" + parameters.String() + ")" + returnTypeSuffix + " {"),
-		writer.Block(m.statementsCode(method.Statements)),
+		writer.Block{
+			writer.Group(useParametersCode),
+			writer.Group(m.statementsCode(method.Statements)),
+		},
 		writer.Line("}"),
 		writer.Line(""),
 	}
 }
 
-func fieldName(field agnostic.Field) string {
-	return strings.ToLower(field.Name[:1]) + field.Name[1:]
+func fieldMethodName(name string) string {
+	return strings.ToUpper(name[:1]) + name[1:]
+}
+
+func fieldName(name string) string {
+	return strings.ToLower(name[:1]) + name[1:]
 }
 
 func (m *modelWriter) fieldCode(field agnostic.Field) writer.Code {
-	return writer.Line(fieldName(field) + " " + m.typeString(field.Type))
+	return writer.Line(fieldName(field.Name) + " " + m.typeString(field.Type))
 }
 
 func (m *modelWriter) fieldGetterSetterCode(field agnostic.Field) writer.Code {
-	methodName := strings.ToUpper(field.Name[:1]) + field.Name[1:]
+	getterSetterCode := make([]writer.Code, 0)
 
-	return writer.Group{
-		writer.Line("func (" + m.receiverName() + " *" + m.model.Name + ") " + methodName + "() " + m.typeString(field.Type) + " {"),
-		writer.Block{
-			writer.Line("return " + m.receiverName() + "." + fieldName(field)),
-		},
-		writer.Line("}"),
-		writer.Line(""),
-		writer.Line("func (" + m.receiverName() + " *" + m.model.Name + ") Set" + methodName + "(newValue " + m.typeString(field.Type) + ") " + " {"),
-		writer.Block{
-			writer.Line(m.receiverName() + "." + fieldName(field) + " = newValue"),
-		},
-		writer.Line("}"),
+	if field.Access != agnostic.Private {
+		getterSetterCode = append(getterSetterCode, writer.Group{
+			writer.Line("func (" + m.receiverName() + " *" + m.model.Name + ") " + fieldMethodName(field.Name) + "() " + m.typeString(field.Type) + " {"),
+			writer.Block{
+				writer.Line("return " + m.receiverName() + "." + fieldName(field.Name)),
+			},
+			writer.Line("}"),
+			writer.Line(""),
+		})
 	}
+
+	if field.Access == agnostic.Public {
+		getterSetterCode = append(getterSetterCode, writer.Group{
+			writer.Line("func (" + m.receiverName() + " *" + m.model.Name + ") Set" + fieldMethodName(field.Name) + "(newValue " + m.typeString(field.Type) + ") " + " {"),
+			writer.Block{
+				writer.Line(m.receiverName() + "." + fieldName(field.Name) + " = newValue"),
+			},
+			writer.Line("}"),
+		})
+	}
+
+	return writer.Group(getterSetterCode)
 }
 
 func ModelCode(model agnostic.Model) (writer.Code, error) {

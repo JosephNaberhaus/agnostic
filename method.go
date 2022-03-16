@@ -29,6 +29,14 @@ type AssignField struct {
 // isStatement implements the Statement interface so that AssignField can be used as a Statement
 func (a AssignField) isStatement() {}
 
+type AssignOwnField struct {
+	FieldName string
+	Value     Value
+}
+
+// isStatement implements the Statement interface so that AssignOwnField can be used as a Statement
+func (a AssignOwnField) isStatement() {}
+
 type AppendValue struct {
 	Array    Value
 	ToAppend Value
