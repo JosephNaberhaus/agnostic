@@ -11,7 +11,7 @@ func TestGolang_IfWhenConditionIsFalse(t *testing.T) {
   output := false
   _ = output
   if input {
-    output = false
+    output = true
   }
   assert.False(t, output)
 }

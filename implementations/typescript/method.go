@@ -30,21 +30,21 @@ func (m *modelWriter) statementCode(statement agnostic.Statement) writer.Code {
 	case agnostic.ForEach:
 		return writer.Group{
 			writer.Line(m.valueString(s.Array) + ".foreach((" + s.ValueVariableName + ", " + s.IndexVariableName + ") => {"),
-			m.statementsCode(s.Statements),
+			writer.Block(m.statementsCode(s.Statements)),
 			writer.Line("});"),
 		}
 	case agnostic.If:
 		return writer.Group{
 			writer.Line("if (" + m.valueString(s.Condition) + ") {"),
-			m.statementsCode(s.Statements),
+			writer.Block(m.statementsCode(s.Statements)),
 			writer.Line("}"),
 		}
 	case agnostic.IfElse:
 		return writer.Group{
 			writer.Line("if (" + m.valueString(s.Condition) + ") {"),
-			m.statementsCode(s.TrueStatements),
+			writer.Block(m.statementsCode(s.TrueStatements)),
 			writer.Line("} else {"),
-			m.statementsCode(s.FalseStatements),
+			writer.Block(m.statementsCode(s.FalseStatements)),
 			writer.Line("}"),
 		}
 	case agnostic.Return:
@@ -54,13 +54,13 @@ func (m *modelWriter) statementCode(statement agnostic.Statement) writer.Code {
 	}
 }
 
-func (m *modelWriter) statementsCode(statements []agnostic.Statement) writer.Code {
+func (m *modelWriter) statementsCode(statements []agnostic.Statement) []writer.Code {
 	code := make([]writer.Code, 0, len(statements))
 	for _, statement := range statements {
 		code = append(code, m.statementCode(statement))
 	}
 
-	return writer.Group(code)
+	return code
 }
 
 func (m *modelWriter) methodCode(method agnostic.Method) writer.Group {
@@ -81,9 +81,7 @@ func (m *modelWriter) methodCode(method agnostic.Method) writer.Group {
 
 	return writer.Group{
 		writer.Line(method.Name + "(" + parameters.String() + "): " + returnType + " {"),
-		writer.Block{
-			m.statementsCode(method.Statements),
-		},
+		writer.Block(m.statementsCode(method.Statements)),
 		writer.Line("}"),
 		writer.Line(""),
 	}

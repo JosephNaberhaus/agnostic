@@ -6,7 +6,7 @@ describe('TypeScript', () => {
       let input = true;
       let output = false;
       if (input) {
-      output = true;
+        output = true;
       }
       expect(output).to.be.true;
     });

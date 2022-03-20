@@ -49,7 +49,7 @@ func TestCode(suite test.Suite, t test.Test) writer.Code {
 			writer.Block{
 				writer.Line("it('" + t.Name + "', () => {"),
 				writer.Block{
-					testModelWriter.statementsCode(t.Before),
+					writer.Group(testModelWriter.statementsCode(t.Before)),
 					writer.Group(assertionsCode(t.Assertions)),
 				},
 				writer.Line("});"),

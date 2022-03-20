@@ -24,7 +24,7 @@ var ifSuite = test.Suite{
 					Statements: []agnostic.Statement{
 						agnostic.AssignVar{
 							Var:   agnostic.VariableValue("output"),
-							Value: agnostic.BooleanLiteralValue(false),
+							Value: agnostic.BooleanLiteralValue(true),
 						},
 					},
 				},
