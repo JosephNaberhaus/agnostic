@@ -60,7 +60,7 @@ func operatorString(operator agnostic.Operator) string {
 		return "-"
 	case agnostic.Multiply:
 		return "*"
-	case agnostic.Divide:
+	case agnostic.IntegerDivision:
 		return "/"
 	case agnostic.Modulo:
 		return "%"
@@ -90,7 +90,7 @@ func (m *modelWriter) valueString(value agnostic.Value) string {
 	case agnostic.FloatLiteralValue:
 		return strconv.FormatFloat(float64(v), 'f', -1, 64)
 	case agnostic.StringLiteralValue:
-		return string(v)
+		return "\"" + string(v) + "\""
 	case agnostic.ArrayElementValue:
 		return m.valueString(v.Array) + "[" + m.valueString(v.Index) + "]"
 	case agnostic.MapElementValue:
@@ -150,6 +150,7 @@ func (m *modelWriter) statementCode(statement agnostic.Statement) writer.Code {
 		return writer.Group{
 			writer.Line("if " + m.valueString(s.Condition) + " {"),
 			writer.Block(m.statementsCode(s.Statements)),
+			writer.Line("}"),
 		}
 	case agnostic.IfElse:
 		return writer.Group{

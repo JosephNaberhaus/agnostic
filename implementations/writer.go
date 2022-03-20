@@ -12,12 +12,17 @@ import (
 	"strings"
 )
 
-type Language int
+type Language string
 
 const (
-	Golang Language = iota
-	Typescript
+	Golang     Language = "golang"
+	Typescript          = "typescript"
 )
+
+var Languages = []Language{
+	Golang,
+	Typescript,
+}
 
 func WriteModel(p agnostic.Model, language Language) error {
 	switch language {

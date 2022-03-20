@@ -65,7 +65,7 @@ const (
 	Add Operator = iota
 	Subtract
 	Multiply
-	Divide
+	IntegerDivision
 	Modulo
 	Equal
 	NotEqual
