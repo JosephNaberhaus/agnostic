@@ -2,8 +2,8 @@ import { expect } from 'chai';
 
 describe('TypeScript', () => {
   describe('Operator', () => {
-    it('GreaterThanEqual', () => {
-      expect(10 > 10).to.be.false;
+    it('EqualWithStringWhenNotEqual', () => {
+      expect('test' == 'hello').to.be.false;
     });
   });
 });

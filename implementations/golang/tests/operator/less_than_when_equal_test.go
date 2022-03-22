@@ -5,6 +5,6 @@ import (
   "testing"
 )
 
-func TestGolang_UnequalInt(t *testing.T) {
-  assert.False(t, "test" == "hello")
+func TestGolang_LessThanWhenEqual(t *testing.T) {
+  assert.False(t, 10 < 10)
 }

@@ -6,5 +6,5 @@ import (
 )
 
 func TestGolang_IntegerDivisionRoundsDown(t *testing.T) {
-  assert.Equal(t, 3, 10 / 3)
+  assert.Equal(t, 3, 11 / 3)
 }

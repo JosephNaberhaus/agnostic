@@ -5,6 +5,6 @@ import (
   "testing"
 )
 
-func TestGolang_GreaterThan(t *testing.T) {
+func TestGolang_GreaterThanWhenGreaterThan(t *testing.T) {
   assert.True(t, 10 > 9)
 }

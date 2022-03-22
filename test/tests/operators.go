@@ -66,7 +66,7 @@ var operatorSuite = test.Suite{
 				test.IsEqual{
 					Expected: agnostic.IntLiteralValue(3),
 					Actual: agnostic.ComputedValue{
-						Left:     agnostic.IntLiteralValue(10),
+						Left:     agnostic.IntLiteralValue(11),
 						Operator: agnostic.IntegerDivision,
 						Right:    agnostic.IntLiteralValue(3),
 					},
@@ -77,9 +77,9 @@ var operatorSuite = test.Suite{
 			Name: "Modulo",
 			Assertions: []test.Assertion{
 				test.IsEqual{
-					Expected: agnostic.IntLiteralValue(1),
+					Expected: agnostic.IntLiteralValue(2),
 					Actual: agnostic.ComputedValue{
-						Left:     agnostic.IntLiteralValue(10),
+						Left:     agnostic.IntLiteralValue(11),
 						Operator: agnostic.Modulo,
 						Right:    agnostic.IntLiteralValue(3),
 					},
@@ -87,7 +87,7 @@ var operatorSuite = test.Suite{
 			},
 		},
 		{
-			Name: "EqualInt",
+			Name: "EqualWhenEqual",
 			Assertions: []test.Assertion{
 				test.IsTrue{
 					Actual: agnostic.ComputedValue{
@@ -99,7 +99,7 @@ var operatorSuite = test.Suite{
 			},
 		},
 		{
-			Name: "UnequalInt",
+			Name: "EqualWhenNotEqual",
 			Assertions: []test.Assertion{
 				test.IsFalse{
 					Actual: agnostic.ComputedValue{
@@ -111,7 +111,7 @@ var operatorSuite = test.Suite{
 			},
 		},
 		{
-			Name: "EqualString",
+			Name: "EqualWithStringWhenEqual",
 			Assertions: []test.Assertion{
 				test.IsTrue{
 					Actual: agnostic.ComputedValue{
@@ -123,7 +123,7 @@ var operatorSuite = test.Suite{
 			},
 		},
 		{
-			Name: "UnequalInt",
+			Name: "EqualWithStringWhenNotEqual",
 			Assertions: []test.Assertion{
 				test.IsFalse{
 					Actual: agnostic.ComputedValue{
@@ -135,7 +135,7 @@ var operatorSuite = test.Suite{
 			},
 		},
 		{
-			Name: "GreaterThan",
+			Name: "GreaterThanWhenGreaterThan",
 			Assertions: []test.Assertion{
 				test.IsTrue{
 					Actual: agnostic.ComputedValue{
@@ -147,7 +147,7 @@ var operatorSuite = test.Suite{
 			},
 		},
 		{
-			Name: "GreaterThanEqual",
+			Name: "GreaterThanWhenEqual",
 			Assertions: []test.Assertion{
 				test.IsFalse{
 					Actual: agnostic.ComputedValue{
@@ -159,7 +159,7 @@ var operatorSuite = test.Suite{
 			},
 		},
 		{
-			Name: "NotGreaterThan",
+			Name: "GreaterThanWhenLessThan",
 			Assertions: []test.Assertion{
 				test.IsFalse{
 					Actual: agnostic.ComputedValue{
@@ -171,19 +171,7 @@ var operatorSuite = test.Suite{
 			},
 		},
 		{
-			Name: "GreaterThanOrEqualToEqual",
-			Assertions: []test.Assertion{
-				test.IsTrue{
-					Actual: agnostic.ComputedValue{
-						Left:     agnostic.IntLiteralValue(10),
-						Operator: agnostic.GreaterThanOrEqualTo,
-						Right:    agnostic.IntLiteralValue(10),
-					},
-				},
-			},
-		},
-		{
-			Name: "GreaterThanOrEqualToGreatThan",
+			Name: "GreaterThanOrEqualToWhenGreaterThan",
 			Assertions: []test.Assertion{
 				test.IsTrue{
 					Actual: agnostic.ComputedValue{
@@ -195,7 +183,19 @@ var operatorSuite = test.Suite{
 			},
 		},
 		{
-			Name: "NotGreaterThanOrEqual",
+			Name: "GreaterThanOrEqualToWhenEqual",
+			Assertions: []test.Assertion{
+				test.IsTrue{
+					Actual: agnostic.ComputedValue{
+						Left:     agnostic.IntLiteralValue(10),
+						Operator: agnostic.GreaterThanOrEqualTo,
+						Right:    agnostic.IntLiteralValue(10),
+					},
+				},
+			},
+		},
+		{
+			Name: "GreaterThanOrEqualToWhenLessThan",
 			Assertions: []test.Assertion{
 				test.IsFalse{
 					Actual: agnostic.ComputedValue{
@@ -207,7 +207,7 @@ var operatorSuite = test.Suite{
 			},
 		},
 		{
-			Name: "LessThan",
+			Name: "LessThanWhenLessThan",
 			Assertions: []test.Assertion{
 				test.IsTrue{
 					Actual: agnostic.ComputedValue{
@@ -219,7 +219,7 @@ var operatorSuite = test.Suite{
 			},
 		},
 		{
-			Name: "LessThanEqual",
+			Name: "LessThanWhenEqual",
 			Assertions: []test.Assertion{
 				test.IsFalse{
 					Actual: agnostic.ComputedValue{
@@ -231,7 +231,7 @@ var operatorSuite = test.Suite{
 			},
 		},
 		{
-			Name: "NotLessThan",
+			Name: "LessThanWhenGreaterThan",
 			Assertions: []test.Assertion{
 				test.IsFalse{
 					Actual: agnostic.ComputedValue{
@@ -243,19 +243,7 @@ var operatorSuite = test.Suite{
 			},
 		},
 		{
-			Name: "LessThanOrEqualToEqual",
-			Assertions: []test.Assertion{
-				test.IsFalse{
-					Actual: agnostic.ComputedValue{
-						Left:     agnostic.IntLiteralValue(10),
-						Operator: agnostic.LessThan,
-						Right:    agnostic.IntLiteralValue(10),
-					},
-				},
-			},
-		},
-		{
-			Name: "LessThanOrEqualToGreatThan",
+			Name: "LessThanOrEqualToWithLessThan",
 			Assertions: []test.Assertion{
 				test.IsTrue{
 					Actual: agnostic.ComputedValue{
@@ -267,7 +255,19 @@ var operatorSuite = test.Suite{
 			},
 		},
 		{
-			Name: "NotLessThanOrEqual",
+			Name: "LessThanOrEqualToWhenEqual",
+			Assertions: []test.Assertion{
+				test.IsTrue{
+					Actual: agnostic.ComputedValue{
+						Left:     agnostic.IntLiteralValue(10),
+						Operator: agnostic.LessThanOrEqualTo,
+						Right:    agnostic.IntLiteralValue(10),
+					},
+				},
+			},
+		},
+		{
+			Name: "LessThanOrEqualToWithGreaterThan",
 			Assertions: []test.Assertion{
 				test.IsFalse{
 					Actual: agnostic.ComputedValue{

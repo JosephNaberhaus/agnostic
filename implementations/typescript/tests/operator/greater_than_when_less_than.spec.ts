@@ -2,8 +2,8 @@ import { expect } from 'chai';
 
 describe('TypeScript', () => {
   describe('Operator', () => {
-    it('NotLessThan', () => {
-      expect(6 < 5).to.be.false;
+    it('GreaterThanWhenLessThan', () => {
+      expect(5 > 6).to.be.false;
     });
   });
 });
