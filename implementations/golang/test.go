@@ -2,7 +2,7 @@ package golang
 
 import (
 	"fmt"
-	writer "github.com/JosephNaberhaus/agnostic/implementations/code"
+	writer "github.com/JosephNaberhaus/agnostic/implementations/writer"
 	"github.com/JosephNaberhaus/agnostic/test"
 	"os"
 	"os/exec"

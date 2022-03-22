@@ -2,9 +2,9 @@ package implementations
 
 import (
 	"fmt"
-	writer "github.com/JosephNaberhaus/agnostic/implementations/code"
 	"github.com/JosephNaberhaus/agnostic/implementations/golang"
 	"github.com/JosephNaberhaus/agnostic/implementations/typescript"
+	writer "github.com/JosephNaberhaus/agnostic/implementations/writer"
 	"github.com/JosephNaberhaus/agnostic/test"
 	"github.com/JosephNaberhaus/agnostic/test/tests"
 	"github.com/JosephNaberhaus/agnostic/utils"

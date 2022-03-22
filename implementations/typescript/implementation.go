@@ -3,7 +3,7 @@ package typescript
 import (
 	"fmt"
 	"github.com/JosephNaberhaus/agnostic"
-	"github.com/JosephNaberhaus/agnostic/implementations/code"
+	"github.com/JosephNaberhaus/agnostic/implementations/writer"
 	"path/filepath"
 	"strings"
 )
