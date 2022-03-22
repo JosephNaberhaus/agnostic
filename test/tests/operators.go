@@ -243,7 +243,7 @@ var operatorSuite = test.Suite{
 			},
 		},
 		{
-			Name: "LessThanOrEqualToWithLessThan",
+			Name: "LessThanOrEqualToWhenLessThan",
 			Assertions: []test.Assertion{
 				test.IsTrue{
 					Actual: agnostic.ComputedValue{
@@ -267,7 +267,7 @@ var operatorSuite = test.Suite{
 			},
 		},
 		{
-			Name: "LessThanOrEqualToWithGreaterThan",
+			Name: "LessThanOrEqualToWhenGreaterThan",
 			Assertions: []test.Assertion{
 				test.IsFalse{
 					Actual: agnostic.ComputedValue{

@@ -5,6 +5,6 @@ import (
   "testing"
 )
 
-func TestGolang_LessThanOrEqualToWithLessThan(t *testing.T) {
+func TestGolang_LessThanOrEqualToWhenLessThan(t *testing.T) {
   assert.True(t, 3 <= 6)
 }
