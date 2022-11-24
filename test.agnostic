@@ -1,0 +1,6 @@
+model Test{
+    Value: bool;
+
+    Number : int32 ;
+
+   }
