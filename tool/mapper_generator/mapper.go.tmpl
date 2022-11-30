@@ -32,6 +32,20 @@ func MapNode[T any](node Node, mapper NodeMapper[T]) (T, error) {
     }
 }
 
+func MapNodes[T any, V Node](nodes []V, mapper NodeMapper[T]) ([]T, error) {
+	var resultNodes []T
+	for _, node := range nodes {
+		resultNode, err := MapNode(node, mapper)
+		if err != nil {
+			return nil, err
+		}
+
+		resultNodes = append(resultNodes, resultNode)
+	}
+
+	return resultNodes, nil
+}
+
 {{ range $nodeType, $implementations := $.NodeTypeImplementations }}
 type {{ $nodeType.Name }}Mapper[T any] interface {
 {{ range $implementation := $implementations }}

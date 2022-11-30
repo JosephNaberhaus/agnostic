@@ -16,11 +16,13 @@ func (e Error) Error() string {
 	return fmt.Sprintf("lexer error: %s", e.message)
 }
 
-func createError(r runes, message string) Error {
-	return Error{
+func createError(r parserState, message string) error {
+	newError := Error{
 		pos:     r.numConsumed,
 		message: message,
 	}
+
+	return takeFurthest(r.furthestIgnorableError, newError)
 }
 
 // takeFurthest attempts to cast both errors to the Error type, and then returns the one that has the furthest position.
@@ -119,7 +121,7 @@ func (c ContextualError) Error() string {
 		output.WriteRune('\n')
 
 		if lineNumber == errorLineNumber {
-			output.WriteString(strings.Repeat(" ", maxLineNumberLength+1+errorColNumber))
+			output.WriteString(strings.Repeat(" ", maxLineNumberLength+2+errorColNumber))
 			output.WriteRune('^')
 			output.WriteRune('\n')
 		}

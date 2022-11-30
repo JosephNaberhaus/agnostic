@@ -1,12 +1,14 @@
 package ast
 
+// TODO move to value.go
+
 // Literal Int32
 
-type LiteralInt32 struct {
-	Value int32
+type LiteralInt struct {
+	Value int64
 }
 
-func (l LiteralInt32) isValue() {}
+func (l LiteralInt) isValue() {}
 
 // Literal String
 

@@ -1,6 +1,35 @@
+module FirstTest
+
+model Point {
+    x: string;
+    y: int;
+}
+
 model Test{
-    Value: bool;
+    pos: Point;
 
-    Number : int32 ;
+    value: string;
 
-   }
+    number : int ;
+
+    lookup: map<int, list<int>>;
+
+    things: list<list<int>>;
+
+    int test() {
+        number = 42 + 2;
+
+        if (things[1][1] == lookup[1][2]) {
+          number = 22;
+        } else {
+          number = 12;
+        }
+
+        return ((things[0])[1]);
+    }
+}
+
+void testFunction() {
+    var test = new Test();
+    var testAgain = (new Test()).pos.x;
+}

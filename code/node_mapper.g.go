@@ -10,7 +10,11 @@ type Node interface {
 	isNode()
 }
 
-func (l *LiteralInt32) isNode() {}
+func (f *Function) isNode() {}
+
+func (f *FunctionProperty) isNode() {}
+
+func (l *LiteralInt) isNode() {}
 
 func (l *LiteralString) isNode() {}
 
@@ -22,11 +26,13 @@ func (m *MethodDef) isNode() {}
 
 func (m *ModelDef) isNode() {}
 
+func (v *Variable) isNode() {}
+
 func (p *Property) isNode() {}
 
-func (t *This) isNode() {}
-
 func (m *Module) isNode() {}
+
+func (f *FunctionDef) isNode() {}
 
 func (u UnaryOperator) isNode() {}
 
@@ -46,12 +52,30 @@ func (e *Else) isNode() {}
 
 func (c *Conditional) isNode() {}
 
+func (r *Return) isNode() {}
+
+func (d *Declare) isNode() {}
+
 func (m *Model) isNode() {}
 
 func (p Primitive) isNode() {}
 
+func (l *List) isNode() {}
+
+func (m *Map) isNode() {}
+
+func (c *Call) isNode() {}
+
+func (l *Lookup) isNode() {}
+
+func (n *New) isNode() {}
+
 type NodeMapper[T any] interface {
-	MapLiteralInt32(original *LiteralInt32) (T, error)
+	MapFunction(original *Function) (T, error)
+
+	MapFunctionProperty(original *FunctionProperty) (T, error)
+
+	MapLiteralInt(original *LiteralInt) (T, error)
 
 	MapLiteralString(original *LiteralString) (T, error)
 
@@ -63,11 +87,13 @@ type NodeMapper[T any] interface {
 
 	MapModelDef(original *ModelDef) (T, error)
 
+	MapVariable(original *Variable) (T, error)
+
 	MapProperty(original *Property) (T, error)
 
-	MapThis(original *This) (T, error)
-
 	MapModule(original *Module) (T, error)
+
+	MapFunctionDef(original *FunctionDef) (T, error)
 
 	MapUnaryOperator(original UnaryOperator) (T, error)
 
@@ -87,16 +113,36 @@ type NodeMapper[T any] interface {
 
 	MapConditional(original *Conditional) (T, error)
 
+	MapReturn(original *Return) (T, error)
+
+	MapDeclare(original *Declare) (T, error)
+
 	MapModel(original *Model) (T, error)
 
 	MapPrimitive(original Primitive) (T, error)
+
+	MapList(original *List) (T, error)
+
+	MapMap(original *Map) (T, error)
+
+	MapCall(original *Call) (T, error)
+
+	MapLookup(original *Lookup) (T, error)
+
+	MapNew(original *New) (T, error)
 }
 
 func MapNode[T any](node Node, mapper NodeMapper[T]) (T, error) {
 	switch value := node.(type) {
 
-	case *LiteralInt32:
-		return mapper.MapLiteralInt32(value)
+	case *Function:
+		return mapper.MapFunction(value)
+
+	case *FunctionProperty:
+		return mapper.MapFunctionProperty(value)
+
+	case *LiteralInt:
+		return mapper.MapLiteralInt(value)
 
 	case *LiteralString:
 		return mapper.MapLiteralString(value)
@@ -113,14 +159,17 @@ func MapNode[T any](node Node, mapper NodeMapper[T]) (T, error) {
 	case *ModelDef:
 		return mapper.MapModelDef(value)
 
+	case *Variable:
+		return mapper.MapVariable(value)
+
 	case *Property:
 		return mapper.MapProperty(value)
 
-	case *This:
-		return mapper.MapThis(value)
-
 	case *Module:
 		return mapper.MapModule(value)
+
+	case *FunctionDef:
+		return mapper.MapFunctionDef(value)
 
 	case UnaryOperator:
 		return mapper.MapUnaryOperator(value)
@@ -149,11 +198,32 @@ func MapNode[T any](node Node, mapper NodeMapper[T]) (T, error) {
 	case *Conditional:
 		return mapper.MapConditional(value)
 
+	case *Return:
+		return mapper.MapReturn(value)
+
+	case *Declare:
+		return mapper.MapDeclare(value)
+
 	case *Model:
 		return mapper.MapModel(value)
 
 	case Primitive:
 		return mapper.MapPrimitive(value)
+
+	case *List:
+		return mapper.MapList(value)
+
+	case *Map:
+		return mapper.MapMap(value)
+
+	case *Call:
+		return mapper.MapCall(value)
+
+	case *Lookup:
+		return mapper.MapLookup(value)
+
+	case *New:
+		return mapper.MapNew(value)
 
 	default:
 		var zero T
@@ -161,19 +231,38 @@ func MapNode[T any](node Node, mapper NodeMapper[T]) (T, error) {
 	}
 }
 
-type AssignableMapper[T any] interface {
-	MapProperty(original *Property) (T, error)
+func MapNodes[T any, V Node](nodes []V, mapper NodeMapper[T]) ([]T, error) {
+	var resultNodes []T
+	for _, node := range nodes {
+		resultNode, err := MapNode(node, mapper)
+		if err != nil {
+			return nil, err
+		}
+
+		resultNodes = append(resultNodes, resultNode)
+	}
+
+	return resultNodes, nil
 }
 
-func MapAssignable[T any](nodeType Assignable, mapper AssignableMapper[T]) (T, error) {
+type CallableMapper[T any] interface {
+	MapFunction(original *Function) (T, error)
+
+	MapFunctionProperty(original *FunctionProperty) (T, error)
+}
+
+func MapCallable[T any](nodeType Callable, mapper CallableMapper[T]) (T, error) {
 	switch value := nodeType.(type) {
 
-	case *Property:
-		return mapper.MapProperty(value)
+	case *Function:
+		return mapper.MapFunction(value)
+
+	case *FunctionProperty:
+		return mapper.MapFunctionProperty(value)
 
 	default:
 		var zero T
-		return zero, fmt.Errorf("unknown Assignable: %T", nodeType)
+		return zero, fmt.Errorf("unknown Callable: %T", nodeType)
 	}
 }
 
@@ -181,6 +270,8 @@ type DefinitionMapper[T any] interface {
 	MapFieldDef(original *FieldDef) (T, error)
 
 	MapArgumentDef(original *ArgumentDef) (T, error)
+
+	MapDeclare(original *Declare) (T, error)
 }
 
 func MapDefinition[T any](nodeType Definition, mapper DefinitionMapper[T]) (T, error) {
@@ -192,6 +283,9 @@ func MapDefinition[T any](nodeType Definition, mapper DefinitionMapper[T]) (T, e
 	case *ArgumentDef:
 		return mapper.MapArgumentDef(value)
 
+	case *Declare:
+		return mapper.MapDeclare(value)
+
 	default:
 		var zero T
 		return zero, fmt.Errorf("unknown Definition: %T", nodeType)
@@ -202,6 +296,10 @@ type StatementMapper[T any] interface {
 	MapAssignment(original *Assignment) (T, error)
 
 	MapConditional(original *Conditional) (T, error)
+
+	MapReturn(original *Return) (T, error)
+
+	MapDeclare(original *Declare) (T, error)
 }
 
 func MapStatement[T any](nodeType Statement, mapper StatementMapper[T]) (T, error) {
@@ -213,6 +311,12 @@ func MapStatement[T any](nodeType Statement, mapper StatementMapper[T]) (T, erro
 	case *Conditional:
 		return mapper.MapConditional(value)
 
+	case *Return:
+		return mapper.MapReturn(value)
+
+	case *Declare:
+		return mapper.MapDeclare(value)
+
 	default:
 		var zero T
 		return zero, fmt.Errorf("unknown Statement: %T", nodeType)
@@ -223,6 +327,10 @@ type TypeMapper[T any] interface {
 	MapModel(original *Model) (T, error)
 
 	MapPrimitive(original Primitive) (T, error)
+
+	MapList(original *List) (T, error)
+
+	MapMap(original *Map) (T, error)
 }
 
 func MapType[T any](nodeType Type, mapper TypeMapper[T]) (T, error) {
@@ -234,6 +342,12 @@ func MapType[T any](nodeType Type, mapper TypeMapper[T]) (T, error) {
 	case Primitive:
 		return mapper.MapPrimitive(value)
 
+	case *List:
+		return mapper.MapList(value)
+
+	case *Map:
+		return mapper.MapMap(value)
+
 	default:
 		var zero T
 		return zero, fmt.Errorf("unknown Type: %T", nodeType)
@@ -241,39 +355,54 @@ func MapType[T any](nodeType Type, mapper TypeMapper[T]) (T, error) {
 }
 
 type ValueMapper[T any] interface {
-	MapLiteralInt32(original *LiteralInt32) (T, error)
+	MapLiteralInt(original *LiteralInt) (T, error)
 
 	MapLiteralString(original *LiteralString) (T, error)
 
-	MapProperty(original *Property) (T, error)
+	MapVariable(original *Variable) (T, error)
 
-	MapThis(original *This) (T, error)
+	MapProperty(original *Property) (T, error)
 
 	MapUnaryOperation(original *UnaryOperation) (T, error)
 
 	MapBinaryOperation(original *BinaryOperation) (T, error)
+
+	MapCall(original *Call) (T, error)
+
+	MapLookup(original *Lookup) (T, error)
+
+	MapNew(original *New) (T, error)
 }
 
 func MapValue[T any](nodeType Value, mapper ValueMapper[T]) (T, error) {
 	switch value := nodeType.(type) {
 
-	case *LiteralInt32:
-		return mapper.MapLiteralInt32(value)
+	case *LiteralInt:
+		return mapper.MapLiteralInt(value)
 
 	case *LiteralString:
 		return mapper.MapLiteralString(value)
 
+	case *Variable:
+		return mapper.MapVariable(value)
+
 	case *Property:
 		return mapper.MapProperty(value)
-
-	case *This:
-		return mapper.MapThis(value)
 
 	case *UnaryOperation:
 		return mapper.MapUnaryOperation(value)
 
 	case *BinaryOperation:
 		return mapper.MapBinaryOperation(value)
+
+	case *Call:
+		return mapper.MapCall(value)
+
+	case *Lookup:
+		return mapper.MapLookup(value)
+
+	case *New:
+		return mapper.MapNew(value)
 
 	default:
 		var zero T

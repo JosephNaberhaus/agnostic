@@ -1,89 +1,181 @@
 package lexer
 
-import (
-	"github.com/JosephNaberhaus/agnostic/language/token"
-)
+type void *struct{}
 
-type consumer func(text runes) (runes, []token.Token, error)
+type consumer[T any] func(text parserState) (parserState, T, error)
 
 // first creates a consumer that tries each consumer it's given and returns the result of the first that succeeds.
 // If none of the consumers succeed, then it will return the error of the consumer that made it the furthest.
-func first(consumers ...consumer) consumer {
-	return func(inputText runes) (runes, []token.Token, error) {
+func first[T any](consumers ...consumer[T]) consumer[T] {
+	return func(inputText parserState) (parserState, T, error) {
 		var furthestError error
 		for _, consumer := range consumers {
-			outputText, tokens, err := consumer(inputText)
+			outputText, result, err := consumer(inputText)
 			if err != nil {
 				furthestError = takeFurthest(err, furthestError)
 				continue
 			}
 
-			return outputText, tokens, nil
+			return outputText, result, nil
 		}
 
-		return runes{}, nil, furthestError
+		var zero T
+		return parserState{}, zero, furthestError
 	}
 }
 
 // inOrder creates a consumer that runs each consumer it is given in order.
 // If any of the consumers fail, then the error is returned.
-func inOrder(consumers ...consumer) consumer {
-	return func(text runes) (runes, []token.Token, error) {
-		var tokens []token.Token
+func inOrder(consumers ...consumer[void]) consumer[void] {
+	return func(text parserState) (parserState, void, error) {
 		for _, consumer := range consumers {
-			newText, newTokens, err := consumer(text)
+			newText, _, err := consumer(text)
 			if err != nil {
-				return runes{}, nil, err
+				return parserState{}, nil, err
 			}
 
 			text = newText
-			tokens = append(tokens, newTokens...)
 		}
 
-		return text, tokens, nil
+		return text, nil, nil
 	}
 }
 
 // optional creates a consumer that tries to run the consumer that it is given.
 // If the consumer fails, then the error is swallowed.
-func optional(consumer consumer) consumer {
-	return func(text runes) (runes, []token.Token, error) {
-		newText, newTokens, err := consumer(text)
+func optional(consumer consumer[void]) consumer[void] {
+	return func(text parserState) (parserState, void, error) {
+		newText, result, err := consumer(text)
 		if err != nil {
+			text.addError(err)
 			return text, nil, nil
 		}
 
-		return newText, newTokens, nil
+		return newText, result, nil
 	}
 }
 
-// repeatAndThen creates a consumer that repeatedly runs the first consumer until it fails, then it runs the second consumer.
-// If the second consumer fails then the furthest error will be returned.
-//
-// repeatAndThen would just take a single consumer as a parameter, but it needs to be possible to detect when it should
-// return an error from the first consumer. That is why it takes the next consumer as its second parameter.
-func repeatAndThen(first, second consumer) consumer {
-	return func(text runes) (runes, []token.Token, error) {
-		var tokens []token.Token
+func repeat(consumer consumer[void]) consumer[void] {
+	return func(text parserState) (parserState, void, error) {
+		for text.isNotEmpty() {
+			newText, _, err := consumer(text)
+			if err != nil {
+				text.addError(err)
+				return text, nil, nil
+			}
 
-		isDone := false
-		for !isDone {
-			newText, newTokens, firstErr := first(text)
-			if firstErr != nil {
-				var secondErr error
-				// TODO make better
-				newText, newTokens, secondErr = second(text)
-				if secondErr != nil {
-					return runes{}, nil, takeFurthest(firstErr, secondErr)
-				}
-
-				isDone = true
+			// Check if we've stalled.
+			if newText.numConsumed == text.numConsumed {
+				return parserState{}, nil, createError(newText, "stalled")
 			}
 
 			text = newText
-			tokens = append(tokens, newTokens...)
 		}
 
-		return text, tokens, nil
+		return text, nil, nil
+	}
+}
+
+func skip[T any](consumer consumer[T]) consumer[void] {
+	return func(r parserState) (parserState, void, error) {
+		newRunes, _, err := consumer(r)
+		if err != nil {
+			return parserState{}, nil, err
+		}
+
+		return newRunes, nil, nil
+	}
+}
+
+func handle[T any](consumer consumer[T], handler func(T) error) consumer[void] {
+	return func(r parserState) (parserState, void, error) {
+		newTokens, result, err := consumer(r)
+		if err != nil {
+			return parserState{}, nil, err
+		}
+
+		err = handler(result)
+		if err != nil {
+			return parserState{}, nil, err
+		}
+
+		return newTokens, nil, nil
+	}
+}
+
+func handleNoError[T any](consumer consumer[T], handler func(T)) consumer[void] {
+	return func(r parserState) (parserState, void, error) {
+		newTokens, result, err := consumer(r)
+		if err != nil {
+			return parserState{}, nil, err
+		}
+
+		handler(result)
+
+		return newTokens, nil, nil
+	}
+}
+
+func attempt[T any](result *T, consumer consumer[void]) consumer[T] {
+	return func(text parserState) (parserState, T, error) {
+		var zero T
+		*result = zero
+
+		newText, _, err := consumer(text)
+		if err != nil {
+			return parserState{}, zero, err
+		}
+
+		return newText, *result, nil
+	}
+}
+
+func mapResult[T, V any](consumer consumer[T], mapper func(T) (V, error)) consumer[V] {
+	return func(text parserState) (parserState, V, error) {
+		newText, result, err := consumer(text)
+		if err != nil {
+			var zero V
+			return parserState{}, zero, err
+		}
+
+		mappedResult, err := mapper(result)
+		if err != nil {
+			var zero V
+			return parserState{}, zero, err
+		}
+
+		return newText, mappedResult, nil
+	}
+}
+
+func mapResultToConstant[T, V any](consumer consumer[T], result V) consumer[V] {
+	return mapResult(
+		consumer,
+		func(_ T) (V, error) {
+			return result, nil
+		},
+	)
+}
+
+func deferred[T any](consumerFactory func() consumer[T]) consumer[T] {
+	return func(text parserState) (parserState, T, error) {
+		newText, result, err := consumerFactory()(text)
+		if err != nil {
+			var zero T
+			return parserState{}, zero, err
+		}
+
+		return newText, result, nil
+	}
+}
+
+func lookahead(consumer consumer[void]) consumer[void] {
+	return func(state parserState) (parserState, void, error) {
+		_, _, err := consumer(state)
+		if err != nil {
+			return parserState{}, nil, err
+		}
+
+		return state, nil, nil
 	}
 }

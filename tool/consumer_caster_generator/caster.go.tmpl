@@ -1,0 +1,16 @@
+package lexer
+
+import "github.com/JosephNaberhaus/agnostic/ast"
+
+{{ range $nodeType := . }}
+func castTo{{ $nodeType.Name }}[T ast.{{ $nodeType.Name }}](consumer consumer[T]) consumer[ast.{{ $nodeType.Name }}] {
+	return func(state parserState) (parserState, ast.{{ $nodeType.Name }}, error) {
+		newState, result, err := consumer(state)
+		if err != nil {
+			return parserState{}, nil, err
+		}
+
+		return newState, result, nil
+	}
+}
+{{ end }}

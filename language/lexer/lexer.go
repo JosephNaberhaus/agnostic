@@ -1,24 +1,51 @@
+//go:generate go run ../../tool/consumer_caster_generator/main.go -nodeTypesFile ../../ast/node_types.go
+
 package lexer
 
-import "github.com/JosephNaberhaus/agnostic/language/token"
+import (
+	"github.com/JosephNaberhaus/agnostic/ast"
+)
 
 // TODO rename
-func Test(rawText string) ([]token.Token, error) {
+func Test(rawText string) (ast.Module, error) {
 	r := newRunes(rawText)
 
-	var tokens []token.Token
-	for r.isNotEmpty() {
-		newR, newTokens, err := first(
-			emptyLineConsumer(),
-			modelConsumer(),
-		)(r)
-		if err != nil {
-			return nil, contextualize(err, []rune(rawText))
-		}
+	var module ast.Module
 
-		r = newR
-		tokens = append(tokens, newTokens...)
+	newR, _, err := inOrder(
+		anyWhitespaceConsumer(),
+		skip(stringConsumer("module")),
+		allWhitespaceConsumer(),
+		handleNoError(
+			alphaConsumer(),
+			func(name string) {
+				module.Name = name
+			},
+		),
+		emptyLineConsumer(),
+		repeat(first(
+			emptyLineConsumer(),
+			handleNoError(
+				modelDefConsumer(),
+				func(model ast.ModelDef) {
+					module.Models = append(module.Models, model)
+				},
+			),
+			handleNoError(
+				functionDefConsumer(),
+				func(function ast.FunctionDef) {
+					module.Functions = append(module.Functions, function)
+				},
+			),
+		)),
+	)(r)
+	if err != nil {
+		return ast.Module{}, contextualize(err, []rune(rawText))
 	}
 
-	return tokens, nil
+	if newR.isNotEmpty() {
+		return ast.Module{}, contextualize(createError(newR, "expected end of module"), []rune(rawText))
+	}
+
+	return module, nil
 }

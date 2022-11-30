@@ -11,13 +11,15 @@ type MethodDefMetadata struct {
 }
 
 type ModelDefMetadata struct {
-	FieldMap map[string]*FieldDef
+	FieldMap  map[string]*FieldDef
+	MethodMap map[string]*MethodDef
+}
+
+type VariableMetadata struct {
+	Definition Definition
+	Type       Type
 }
 
 type PropertyMetadata struct {
 	Type Type
-}
-
-type ThisMetadata struct {
-	This *ModelDef
 }

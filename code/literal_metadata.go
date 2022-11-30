@@ -1,5 +1,5 @@
 package code
 
-type LiteralInt32Metadata struct{}
+type LiteralIntMetadata struct{}
 
 type LiteralStringMetadata struct{}

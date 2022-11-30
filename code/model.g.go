@@ -19,10 +19,7 @@ type ArgumentDef struct {
 func (a *ArgumentDef) isDefinition()	{}
 
 type MethodDef struct {
-	Name		string
-	Arguments	[]*ArgumentDef
-	Statements	[]Statement
-	ReturnType	Type
+	Function	*FunctionDef
 	MethodDefMetadata
 }
 
@@ -33,6 +30,15 @@ type ModelDef struct {
 	ModelDefMetadata
 }
 
+type Variable struct {
+	Name	string
+	VariableMetadata
+}
+
+func (v *Variable) isValue()	{}
+
+func (v *Variable) isAssignable()	{}
+
 type Property struct {
 	Of	Value
 	Name	string
@@ -42,7 +48,3 @@ type Property struct {
 func (p *Property) isValue()	{}
 
 func (p *Property) isAssignable()	{}
-
-type This struct{ ThisMetadata }
-
-func (t *This) isValue()	{}

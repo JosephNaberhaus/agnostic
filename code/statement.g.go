@@ -3,7 +3,7 @@
 package code
 
 type Assignment struct {
-	To	Assignable
+	To	Value
 	From	Value
 	AssignmentMetadata
 }
@@ -35,3 +35,20 @@ type Conditional struct {
 }
 
 func (c *Conditional) isStatement()	{}
+
+type Return struct {
+	Value	Value
+	ReturnMetadata
+}
+
+func (r *Return) isStatement()	{}
+
+type Declare struct {
+	Value	Value
+	Name	string
+	DeclareMetadata
+}
+
+func (d *Declare) isStatement()	{}
+
+func (d *Declare) isDefinition()	{}

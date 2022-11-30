@@ -3,7 +3,7 @@ package ast
 // Assignment
 
 type Assignment struct {
-	To   Assignable
+	To   Value
 	From Value
 }
 
@@ -32,3 +32,22 @@ type Conditional struct {
 }
 
 func (c Conditional) isStatement() {}
+
+// Return
+
+type Return struct {
+	Value Value
+}
+
+func (r Return) isStatement() {}
+
+// Declare
+
+type Declare struct {
+	Value Value
+	Name  string
+}
+
+func (d Declare) isStatement() {}
+
+func (d Declare) isDefinition() {}

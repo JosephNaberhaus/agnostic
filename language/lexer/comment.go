@@ -1,12 +1,19 @@
 package lexer
 
-import "github.com/JosephNaberhaus/agnostic/language/token"
-
-func commentConsumer(tokenType token.Type) consumer {
-	return inOrder(
-		anyWhitespaceConsumer(),
-		stringConsumer("//"),
-		anyWhitespaceConsumer(),
-		restOfLineTokenConsumer(tokenType),
+func commentConsumer() consumer[string] {
+	var result string
+	return attempt(
+		&result,
+		inOrder(
+			anyWhitespaceConsumer(),
+			skip(stringConsumer("//")),
+			anyWhitespaceConsumer(),
+			handleNoError(
+				restOfLineConsumer(),
+				func(value string) {
+					result = value
+				},
+			),
+		),
 	)
 }

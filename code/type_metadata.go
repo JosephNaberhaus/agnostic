@@ -5,3 +5,7 @@ type ModelMetadata struct {
 }
 
 type VoidMetadata struct{}
+
+type ListMetadata struct{}
+
+type MapMetadata struct{}

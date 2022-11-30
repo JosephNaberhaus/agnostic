@@ -2,12 +2,12 @@
 
 package code
 
-type LiteralInt32 struct {
-	Value	int32
-	LiteralInt32Metadata
+type LiteralInt struct {
+	Value	int64
+	LiteralIntMetadata
 }
 
-func (l *LiteralInt32) isValue()	{}
+func (l *LiteralInt) isValue()	{}
 
 type LiteralString struct {
 	Value	string

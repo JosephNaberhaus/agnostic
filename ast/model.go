@@ -19,10 +19,7 @@ type ArgumentDef struct {
 func (a ArgumentDef) isDefinition() {}
 
 type MethodDef struct {
-	Name       string
-	Arguments  []ArgumentDef
-	Statements []Statement
-	ReturnType Type
+	Function FunctionDef
 }
 
 // Model
@@ -32,6 +29,16 @@ type ModelDef struct {
 	Fields  []FieldDef
 	Methods []MethodDef
 }
+
+// Variable
+
+type Variable struct {
+	Name string
+}
+
+func (v Variable) isValue() {}
+
+func (v Variable) isAssignable() {}
 
 // Property
 
@@ -43,9 +50,3 @@ type Property struct {
 func (p Property) isValue() {}
 
 func (p Property) isAssignable() {}
-
-// This
-
-type This struct{}
-
-func (t This) isValue() {}

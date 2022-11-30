@@ -3,11 +3,10 @@ package mappers
 import (
 	"errors"
 	"github.com/JosephNaberhaus/agnostic/code"
+	"runtime/debug"
 )
 
 // mapValueToType finds the base code.Type of a code.Value.
-//
-// It will return an error if the value's type isn't a primitive, or if there is an error in the code tree.
 func mapValueToType(value code.Value) (code.Type, error) {
 	return code.MapValue[code.Type](value, &valueToTypeMapper{})
 }
@@ -21,7 +20,7 @@ func mapValueToPrimitiveType(value code.Value) (code.Primitive, error) {
 	primitiveType, ok := valueType.(code.Primitive)
 	if !ok {
 		// TODO improve
-		return 0, errors.New("is not primitive")
+		return 0, errors.New("is not primitive\n" + string(debug.Stack()))
 	}
 
 	return primitiveType, nil
@@ -36,7 +35,7 @@ func mapValueModelType(value code.Value) (*code.Model, error) {
 	modelType, ok := valueType.(*code.Model)
 	if !ok {
 		// TODO improve
-		return nil, errors.New("is not a model")
+		return nil, errors.New("value is not a model")
 	}
 
 	return modelType, nil
@@ -50,8 +49,8 @@ type binaryOperatorPair struct {
 	left, right code.Primitive
 }
 
-func (v *valueToTypeMapper) MapLiteralInt32(original *code.LiteralInt32) (code.Type, error) {
-	return code.Int32, nil
+func (v *valueToTypeMapper) MapLiteralInt(original *code.LiteralInt) (code.Type, error) {
+	return code.Int, nil
 }
 
 func (v *valueToTypeMapper) MapLiteralString(original *code.LiteralString) (code.Type, error) {
@@ -64,19 +63,21 @@ var unaryOperatorMappings = map[code.Primitive]map[code.UnaryOperator]code.Primi
 	code.Boolean: {
 		code.Not: code.Boolean,
 	},
-	code.Int32: {
-		code.Negate: code.Int32,
+	code.Int: {
+		code.Negate: code.Int,
 	},
 }
 
 // binaryOperatorMappings maps from a primitive type into another map containing the binary operations that can be done
 // and the output primitive that they produce.
 var binaryOperatorMappings = map[binaryOperatorPair]map[code.BinaryOperator]code.Primitive{
-	{left: code.Int32, right: code.Int32}: {
-		code.Add: code.Int32,
+	{left: code.Int, right: code.Int}: {
+		code.Equals: code.Boolean,
+		code.Add:    code.Int,
 	},
 	{left: code.String, right: code.String}: {
-		code.Add: code.String,
+		code.Equals: code.Boolean,
+		code.Add:    code.String,
 	},
 }
 
@@ -133,20 +134,40 @@ func (v *valueToTypeMapper) MapProperty(original *code.Property) (code.Type, err
 		return nil, err
 	}
 
-	field, ok := ofModel.ModelMetadata.Definition.FieldMap[original.Name]
-	if !ok {
-		// TODO improve
-		return nil, errors.New("unkown property")
-	}
-
-	return field.Type, nil
+	return mapDefinitionToType(ofModel.ModelMetadata.Definition.FieldMap[original.Name])
 }
 
-func (v *valueToTypeMapper) MapThis(original *code.This) (code.Type, error) {
-	return &code.Model{
-		Name: original.This.Name,
-		ModelMetadata: code.ModelMetadata{
-			Definition: original.This,
-		},
-	}, nil
+func (v *valueToTypeMapper) MapVariable(original *code.Variable) (code.Type, error) {
+	return mapDefinitionToType(original.Definition)
+}
+
+func (v *valueToTypeMapper) MapLookup(original *code.Lookup) (code.Type, error) {
+	fromType, err := mapValueToType(original.From)
+	if err != nil {
+		return nil, err
+	}
+
+	switch fromType := fromType.(type) {
+	case *code.List:
+		return fromType.Base, nil
+	case *code.Map:
+		return fromType.Value, nil
+	default:
+		return nil, errors.New("invalid type")
+	}
+}
+
+func (v *valueToTypeMapper) MapCall(original *code.Call) (code.Type, error) {
+	//ofModel, err := mapValueModelType(original.Function)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//return mapDefinitionToType(ofModel.ModelMetadata.Definition.MethodMap[original.])
+	// TODO
+	return nil, nil
+}
+
+func (v *valueToTypeMapper) MapNew(original *code.New) (code.Type, error) {
+	return original.Model, nil
 }

@@ -3,90 +3,100 @@ package lexer
 // A meaningless rune value that is used when a method must return a rune, but there is no rune to return.
 const nilRune rune = 0xF001
 
-type runes struct {
+type parserState struct {
 	numConsumed int
-	text        []rune
+
+	remaining []rune
+
+	furthestIgnorableError error
 }
 
-func newRunes(text string) runes {
-	return runes{text: []rune(text)}
+func newRunes(text string) parserState {
+	return parserState{
+		remaining: []rune(text),
+	}
 }
 
-func (r *runes) isEmpty() bool {
-	return len(r.text) == 0
+func (p *parserState) addError(err error) {
+	p.furthestIgnorableError = takeFurthest(err, p.furthestIgnorableError)
 }
 
-func (r *runes) isNotEmpty() bool {
-	return !r.isEmpty()
+func (p *parserState) isEmpty() bool {
+	return len(p.remaining) == 0
 }
 
-func (r *runes) numRemaining() int {
-	return len(r.text)
+func (p *parserState) isNotEmpty() bool {
+	return !p.isEmpty()
 }
 
-func (r *runes) peek(n int) []rune {
-	if n > len(r.text) {
-		n = len(r.text)
+func (p *parserState) numRemaining() int {
+	return len(p.remaining)
+}
+
+func (p *parserState) peek(n int) []rune {
+	if n > len(p.remaining) {
+		n = len(p.remaining)
 	}
 
-	return r.text[:n]
+	return p.remaining[:n]
 }
 
-func (r *runes) peekOne() rune {
-	if r.isEmpty() {
+func (p *parserState) peekOne() rune {
+	if p.isEmpty() {
 		return nilRune
 	}
 
-	return r.peek(1)[0]
+	return p.peek(1)[0]
 }
 
-func (r *runes) peekStr(n int) string {
-	return string(r.peek(n))
+func (p *parserState) peekStr(n int) string {
+	return string(p.peek(n))
 }
 
-func (r *runes) consume(n int) []rune {
-	if n > len(r.text) {
-		n = len(r.text)
+func (p *parserState) consume(n int) []rune {
+	if n > len(p.remaining) {
+		n = len(p.remaining)
 	}
 
-	consumed := r.text[:n]
-	r.text = r.text[n:]
-	r.numConsumed += n
+	consumed := p.remaining[:n]
+	p.remaining = p.remaining[n:]
+
+	p.numConsumed += n
 
 	return consumed
 }
 
-func (r *runes) consumeOne() rune {
-	if r.isEmpty() {
+func (p *parserState) consumeOne() rune {
+	if p.isEmpty() {
 		return nilRune
 	}
 
-	return r.consume(1)[0]
+	return p.consume(1)[0]
 }
 
-func (r *runes) consumeStr(n int) string {
-	return string(r.consume(n))
+func (p *parserState) consumeStr(n int) string {
+	return string(p.consume(n))
 }
 
-func (r *runes) consumeWhile(condition func(r rune) bool) []rune {
+func (p *parserState) consumeWhile(condition func(r rune) bool) []rune {
 	var consumed []rune
-	for r.isNotEmpty() && condition(r.peekOne()) {
-		consumed = append(consumed, r.consumeOne())
+	for p.isNotEmpty() && condition(p.peekOne()) {
+		consumed = append(consumed, p.consumeOne())
 	}
 
 	return consumed
 }
 
-func (r *runes) consumeWhileStr(condition func(r rune) bool) string {
-	return string(r.consumeWhile(condition))
+func (p *parserState) consumeWhileStr(condition func(r rune) bool) string {
+	return string(p.consumeWhile(condition))
 }
 
-func (r *runes) consumeUntil(condition func(r rune) bool) []rune {
-	return r.consumeWhile(func(r rune) bool {
+func (p *parserState) consumeUntil(condition func(r rune) bool) []rune {
+	return p.consumeWhile(func(r rune) bool {
 		return !condition(r)
 	})
 }
 
-func (r *runes) consumeUntilStr(condition func(r rune) bool) string {
-	return string(r.consumeUntil(condition))
+func (p *parserState) consumeUntilStr(condition func(r rune) bool) string {
+	return string(p.consumeUntil(condition))
 }

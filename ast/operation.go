@@ -5,7 +5,7 @@ package ast
 type UnaryOperator int
 
 const (
-	Not UnaryOperator = iota
+	Not UnaryOperator = iota + 1
 	Negate
 )
 
@@ -21,7 +21,9 @@ func (u UnaryOperation) isValue() {}
 type BinaryOperator int
 
 const (
-	Add BinaryOperator = iota
+	Add BinaryOperator = iota + 1
+	Subtract
+	Equals
 )
 
 type BinaryOperation struct {

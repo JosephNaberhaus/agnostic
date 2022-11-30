@@ -4,6 +4,7 @@ import (
 	"embed"
 	"flag"
 	"fmt"
+	"github.com/JosephNaberhaus/agnostic/tool/node_types"
 	"go/ast"
 	"go/parser"
 	"go/token"
@@ -33,7 +34,7 @@ const mapperTemplateFilename = "mapper.go.tmpl"
 func main() {
 	flag.Parse()
 
-	codeBlocks, err := findNodeTypes()
+	codeBlocks, err := node_types.FindAll(*nodeTypesPath)
 	if err != nil {
 		log.Fatalf("failed to get node types: %s", err.Error())
 	}
@@ -145,58 +146,14 @@ func findNodesInFile(file *ast.File) []node {
 	return nodes
 }
 
-type nodeType struct {
-	Name           string
-	ExpectedMethod string
-}
-
-// findNodeTypes parses the node types file and returns the node types found in it.
-func findNodeTypes() ([]nodeType, error) {
-	file, err := parser.ParseFile(token.NewFileSet(), *nodeTypesPath, nil, parser.SkipObjectResolution)
-	if err != nil {
-		return nil, fmt.Errorf("getCodeBlocks failed to parse file: %w", err)
-	}
-
-	var codeBlocks []nodeType
-	for _, decl := range file.Decls {
-		if genDecl, ok := decl.(*ast.GenDecl); ok {
-			for _, spec := range genDecl.Specs {
-				if typeSpec, ok := spec.(*ast.TypeSpec); ok {
-					if _, ok := typeSpec.Type.(*ast.InterfaceType); ok {
-						codeBlockName := typeSpec.Name.String()
-						codeBlocks = append(codeBlocks, nodeType{
-							Name:           codeBlockName,
-							ExpectedMethod: createCodeBlockMethodName(codeBlockName),
-						})
-					}
-				}
-			}
-		}
-	}
-
-	return codeBlocks, nil
-}
-
-// createCodeBlockMethodName creates the name of the method that must be implemented to satisfy the interface of the
-// code block.
-//
-// For simplicity, this function assumes that the code block was defined according to the standard:
-//
-// type <CodeBlockName> interface {
-//     is<CodeBlockName>()
-// }
-func createCodeBlockMethodName(codeBlockName string) string {
-	return "is" + codeBlockName
-}
-
 // findNodeTypeImplementations finds the implementations for the given node types.
-func findNodeTypeImplementations(nodeTypes []nodeType) (map[nodeType][]string, error) {
+func findNodeTypeImplementations(nodeTypes []node_types.NodeType) (map[node_types.NodeType][]string, error) {
 	implementationFilePaths, err := findImplementationFilePaths(*sourcesDirPath)
 	if err != nil {
 		return nil, fmt.Errorf("findNodeTypeImplementations failed to find implementation files")
 	}
 
-	implementations := map[nodeType][]string{}
+	implementations := map[node_types.NodeType][]string{}
 	for _, implementationFilePath := range implementationFilePaths {
 		file, err := parser.ParseFile(token.NewFileSet(), implementationFilePath, nil, parser.SkipObjectResolution)
 		if err != nil {
@@ -216,8 +173,8 @@ func findNodeTypeImplementations(nodeTypes []nodeType) (map[nodeType][]string, e
 	return implementations, nil
 }
 
-func findNodeTypeImplementationsInFile(file *ast.File, nodeTypes []nodeType) (map[nodeType][]string, error) {
-	implementations := map[nodeType][]string{}
+func findNodeTypeImplementationsInFile(file *ast.File, nodeTypes []node_types.NodeType) (map[node_types.NodeType][]string, error) {
+	implementations := map[node_types.NodeType][]string{}
 	for _, decl := range file.Decls {
 		if funcDecl, ok := decl.(*ast.FuncDecl); ok {
 			// We are only interested in methods
@@ -230,7 +187,7 @@ func findNodeTypeImplementationsInFile(file *ast.File, nodeTypes []nodeType) (ma
 				continue
 			}
 
-			// Node ty[e interface methods don't return anything
+			// Node type interface methods don't return anything
 			if funcDecl.Type.Results != nil {
 				continue
 			}
@@ -265,7 +222,7 @@ func getPackageName() (string, error) {
 	return filepath.Base(filepath.Dir(filepath.Join(wd, *outputFilePath))), nil
 }
 
-func writeMapperFile(nodes []node, nodeTypeImplementations map[nodeType][]string) error {
+func writeMapperFile(nodes []node, nodeTypeImplementations map[node_types.NodeType][]string) error {
 	mapperTemplateText, err := embeddedFiles.ReadFile(mapperTemplateFilename)
 	if err != nil {
 		return fmt.Errorf("writeMapperFile failed to read mapper template file: %w", err)
@@ -295,7 +252,7 @@ func writeMapperFile(nodes []node, nodeTypeImplementations map[nodeType][]string
 	templateData := struct {
 		PackageName             string
 		Nodes                   []node
-		NodeTypeImplementations map[nodeType][]string
+		NodeTypeImplementations map[node_types.NodeType][]string
 		UsePointersForStructs   bool
 	}{
 		PackageName:             packageName,

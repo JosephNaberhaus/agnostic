@@ -8,12 +8,6 @@ type Definition interface {
 	isDefinition()
 }
 
-type Assignable interface {
-	Node
-
-	isAssignable()
-}
-
 type Statement interface {
 	Node
 
@@ -30,4 +24,10 @@ type Value interface {
 	Node
 
 	isValue()
+}
+
+type Callable interface {
+	Node
+
+	isCallable()
 }

@@ -1,7 +1,7 @@
 package code
 
 type StatementMetadata struct {
-	Parent *MethodDef
+	Parent *FunctionDef
 }
 
 type AssignmentMetadata struct {
@@ -16,4 +16,13 @@ type ElseMetadata struct{}
 
 type ConditionalMetadata struct {
 	StatementMetadata
+}
+
+type ReturnMetadata struct {
+	StatementMetadata
+}
+
+type DeclareMetadata struct {
+	StatementMetadata
+	Type Type
 }

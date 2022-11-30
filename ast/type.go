@@ -13,10 +13,26 @@ func (m Model) isType() {}
 type Primitive int
 
 const (
-	Boolean Primitive = iota
-	Int32
+	Boolean Primitive = iota + 1
+	Int
 	String
 	Void
 )
 
 func (p Primitive) isType() {}
+
+// List
+
+type List struct {
+	Base Type
+}
+
+func (l List) isType() {}
+
+// Map
+
+type Map struct {
+	Key, Value Type
+}
+
+func (m Map) isType() {}

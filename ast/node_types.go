@@ -8,12 +8,6 @@ type Definition interface {
 	isDefinition()
 }
 
-type Assignable interface {
-	Node
-	// isAssignable is only a type-guard to limit what can be used as an Assignable.
-	isAssignable()
-}
-
 type Statement interface {
 	Node
 	// isStatement is only a type-guard to limit what can be used as a Statement.
@@ -30,4 +24,10 @@ type Value interface {
 	Node
 	// isValue is only a type-guard to limit what can be used as a Value.
 	isValue()
+}
+
+type Callable interface {
+	Node
+	// isCallable is only a type-guard to limit what can be used as a callable
+	isCallable()
 }

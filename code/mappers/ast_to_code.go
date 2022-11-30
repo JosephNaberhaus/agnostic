@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/JosephNaberhaus/agnostic/ast"
 	"github.com/JosephNaberhaus/agnostic/code"
-	"strings"
 )
 
 func AstToCode(original ast.Module) (*code.Module, error) {
@@ -57,8 +56,8 @@ func (a *astToCodeMapper) dequeueDefer() deferredCall {
 	return result
 }
 
-func (a *astToCodeMapper) MapLiteralInt32(original ast.LiteralInt32) (code.Node, error) {
-	value := new(code.LiteralInt32)
+func (a *astToCodeMapper) MapLiteralInt(original ast.LiteralInt) (code.Node, error) {
+	value := new(code.LiteralInt)
 	a.stack.push(value)
 	defer a.stack.pop()
 
@@ -82,7 +81,7 @@ func (a *astToCodeMapper) MapFieldDef(original ast.FieldDef) (code.Node, error) 
 	a.stack.push(value)
 	defer a.stack.pop()
 
-	err := validateName(original.Name)
+	err := validateVariableName(original.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +108,7 @@ func (a *astToCodeMapper) MapArgumentDef(original ast.ArgumentDef) (code.Node, e
 	a.stack.push(value)
 	defer a.stack.pop()
 
-	err := validateName(original.Name)
+	err := validateVariableName(original.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -128,36 +127,11 @@ func (a *astToCodeMapper) MapMethodDef(original ast.MethodDef) (code.Node, error
 	a.stack.push(value)
 	defer a.stack.pop()
 
-	err := validateName(original.Name)
+	var err error
+	value.Function, err = mapAstNodeTo[*code.FunctionDef](original.Function, a)
 	if err != nil {
 		return nil, err
 	}
-	value.Name = original.Name
-
-	for _, originalArguments := range original.Arguments {
-		argument, err := mapAstNodeTo[*code.ArgumentDef](originalArguments, a)
-		if err != nil {
-			return nil, err
-		}
-		value.Arguments = append(value.Arguments, argument)
-	}
-
-	value.ReturnType, err = mapAstNodeTo[code.Type](original.ReturnType, a)
-	if err != nil {
-		return nil, err
-	}
-
-	a.queueDefer(func() error {
-		for _, originalStatement := range original.Statements {
-			statement, err := mapAstNodeTo[code.Statement](originalStatement, a)
-			if err != nil {
-				return err
-			}
-			value.Statements = append(value.Statements, statement)
-		}
-
-		return nil
-	})
 
 	var ok bool
 	value.Parent, ok = a.stack.peekParent().(*code.ModelDef)
@@ -174,7 +148,7 @@ func (a *astToCodeMapper) MapModelDef(original ast.ModelDef) (code.Node, error) 
 	a.stack.push(value)
 	defer a.stack.pop()
 
-	err := validateName(original.Name)
+	err := validateModelName(original.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -206,6 +180,16 @@ func (a *astToCodeMapper) MapModelDef(original ast.ModelDef) (code.Node, error) 
 		value.FieldMap[codeField.Name] = codeField
 	}
 
+	value.MethodMap = map[string]*code.MethodDef{}
+	for _, codeMethod := range value.Methods {
+		if _, alreadyExists := value.MethodMap[codeMethod.Function.Name]; alreadyExists {
+			// TODO improve
+			return nil, errors.New("already exists")
+		}
+
+		value.MethodMap[codeMethod.Function.Name] = codeMethod
+	}
+
 	return value, nil
 }
 
@@ -214,12 +198,26 @@ func (a *astToCodeMapper) MapModule(original ast.Module) (code.Node, error) {
 	a.stack.push(value)
 	defer a.stack.pop()
 
+	err := validateModuleName(original.Name)
+	if err != nil {
+		return nil, err
+	}
+	value.Name = original.Name
+
 	for _, originalModel := range original.Models {
 		model, err := mapAstNodeTo[*code.ModelDef](originalModel, a)
 		if err != nil {
 			return nil, err
 		}
 		value.Models = append(value.Models, model)
+	}
+
+	for _, originalFunction := range original.Functions {
+		function, err := mapAstNodeTo[*code.FunctionDef](originalFunction, a)
+		if err != nil {
+			return nil, err
+		}
+		value.Functions = append(value.Functions, function)
 	}
 
 	return value, nil
@@ -292,12 +290,19 @@ func (a *astToCodeMapper) MapAssignment(original ast.Assignment) (code.Node, err
 	defer a.stack.pop()
 
 	var err error
-	value.To, err = mapAstNodeTo[code.Assignable](original.To, a)
+	value.To, err = mapAstNodeTo[code.Value](original.To, a)
 	if err != nil {
 		return nil, err
 	}
 
+	// TODO validate that you can actually assign to `TO`
+
 	value.From, err = mapAstNodeTo[code.Value](original.From, a)
+	if err != nil {
+		return nil, err
+	}
+
+	value.StatementMetadata, err = a.getStatementMetadata()
 	if err != nil {
 		return nil, err
 	}
@@ -336,12 +341,17 @@ func (a *astToCodeMapper) MapPrimitive(original ast.Primitive) (code.Node, error
 }
 
 func (a *astToCodeMapper) MapIf(original ast.If) (code.Node, error) {
-	var value *code.If
+	value := new(code.If)
 	a.stack.push(value)
 	defer a.stack.pop()
 
 	var err error
 	value.Condition, err = mapAstNodeTo[code.Value](original.Condition, a)
+	if err != nil {
+		return nil, err
+	}
+
+	err = validateCondition(value.Condition)
 	if err != nil {
 		return nil, err
 	}
@@ -364,6 +374,11 @@ func (a *astToCodeMapper) MapElseIf(original ast.ElseIf) (code.Node, error) {
 
 	var err error
 	value.Condition, err = mapAstNodeTo[code.Value](original.Condition, a)
+	if err != nil {
+		return nil, err
+	}
+
+	err = validateCondition(value.Condition)
 	if err != nil {
 		return nil, err
 	}
@@ -415,16 +430,16 @@ func (a *astToCodeMapper) MapConditional(original ast.Conditional) (code.Node, e
 		value.ElseIfs = append(value.ElseIfs, elseIf)
 	}
 
-	value.Else, err = mapAstNodeTo[*code.Else](original.Else, a)
-	if err != nil {
-		return nil, err
+	if len(original.Else.Statements) > 0 {
+		value.Else, err = mapAstNodeTo[*code.Else](original.Else, a)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	var ok bool
-	value.Parent, ok = firstOfType[*code.MethodDef](a.stack)
-	if !ok {
-		// TODO improve
-		return nil, errors.New("no model def found in the parent of a conditional")
+	value.StatementMetadata, err = a.getStatementMetadata()
+	if err != nil {
+		return nil, err
 	}
 
 	return value, nil
@@ -451,16 +466,261 @@ func (a *astToCodeMapper) MapProperty(original ast.Property) (code.Node, error) 
 	return value, nil
 }
 
-func (a *astToCodeMapper) MapThis(_ ast.This) (code.Node, error) {
-	value := new(code.This)
+func (a *astToCodeMapper) MapVariable(original ast.Variable) (code.Node, error) {
+	value := new(code.Variable)
 	a.stack.push(value)
 	defer a.stack.pop()
 
-	var ok bool
-	value.This, ok = firstOfType[*code.ModelDef](a.stack)
-	if !ok {
-		// TODO improve
-		return nil, errors.New("no model definition found in the parent of a this")
+	value.Name = original.Name
+
+	var err error
+	value.Definition, err = mapFindDefinition(original.Name, a.stack)
+	if err != nil {
+		return nil, err
+	}
+
+	value.Type, err = mapValueToType(value)
+	if err != nil {
+		return nil, err
+	}
+
+	return value, nil
+}
+
+func (a *astToCodeMapper) MapList(original ast.List) (code.Node, error) {
+	value := new(code.List)
+	a.stack.push(value)
+	defer a.stack.pop()
+
+	var err error
+	value.Base, err = mapAstNodeTo[code.Type](original.Base, a)
+	if err != nil {
+		return nil, err
+	}
+
+	return value, nil
+}
+
+func (a *astToCodeMapper) MapMap(original ast.Map) (code.Node, error) {
+	value := new(code.Map)
+	a.stack.push(value)
+	defer a.stack.pop()
+
+	var err error
+	value.Key, err = mapAstNodeTo[code.Type](original.Key, a)
+	if err != nil {
+		return nil, err
+	}
+
+	value.Value, err = mapAstNodeTo[code.Type](original.Value, a)
+	if err != nil {
+		return nil, err
+	}
+
+	return value, nil
+}
+
+func (a *astToCodeMapper) MapLookup(original ast.Lookup) (code.Node, error) {
+	value := new(code.Lookup)
+	a.stack.push(value)
+	defer a.stack.pop()
+
+	var err error
+	value.From, err = mapAstNodeTo[code.Value](original.From, a)
+	if err != nil {
+		return nil, err
+	}
+
+	value.Key, err = mapAstNodeTo[code.Value](original.Key, a)
+	if err != nil {
+		return nil, err
+	}
+
+	value.OutputType, err = mapValueToType(value)
+	if err != nil {
+		return nil, err
+	}
+
+	fromType, err := mapValueToType(value.From)
+	if err != nil {
+		return nil, err
+	}
+
+	keyType, err := mapValueToType(value.Key)
+	if err != nil {
+		return nil, err
+	}
+
+	switch fromType := fromType.(type) {
+	case *code.Map:
+		value.LookupType = code.LookupTypeMap
+
+		if fromType.Key != keyType {
+			return nil, errors.New("mismatched key type for map")
+		}
+	case *code.List:
+		value.LookupType = code.LookupTypeList
+
+		if keyType != code.Int {
+			return nil, errors.New("lists must be indexed by ints")
+		}
+	default:
+		return nil, errors.New("invalid from type")
+	}
+
+	return value, nil
+}
+
+func (a *astToCodeMapper) MapFunctionDef(original ast.FunctionDef) (code.Node, error) {
+	value := new(code.FunctionDef)
+	a.stack.push(value)
+	defer a.stack.pop()
+
+	err := validateMethodName(original.Name)
+	if err != nil {
+		return nil, err
+	}
+	value.Name = original.Name
+
+	for _, originalArguments := range original.Arguments {
+		argument, err := mapAstNodeTo[*code.ArgumentDef](originalArguments, a)
+		if err != nil {
+			return nil, err
+		}
+		value.Arguments = append(value.Arguments, argument)
+	}
+
+	value.ReturnType, err = mapAstNodeTo[code.Type](original.ReturnType, a)
+	if err != nil {
+		return nil, err
+	}
+
+	_, value.IsMethod = firstOfType[*code.MethodDef](a.stack)
+
+	a.queueDefer(func() error {
+		for _, originalStatement := range original.Statements {
+			statement, err := mapAstNodeTo[code.Statement](originalStatement, a)
+			if err != nil {
+				return err
+			}
+			value.Statements = append(value.Statements, statement)
+		}
+
+		err = validateFunction(value)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	return value, nil
+}
+
+func (a *astToCodeMapper) MapReturn(original ast.Return) (code.Node, error) {
+	value := new(code.Return)
+	a.stack.push(value)
+	defer a.stack.pop()
+
+	var err error
+	value.Value, err = mapAstNodeTo[code.Value](original.Value, a)
+	if err != nil {
+		return nil, err
+	}
+
+	value.StatementMetadata, err = a.getStatementMetadata()
+	if err != nil {
+		return nil, err
+	}
+
+	err = validateReturn(value)
+	if err != nil {
+		return nil, err
+	}
+
+	return value, nil
+}
+
+func (a *astToCodeMapper) MapCall(original ast.Call) (code.Node, error) {
+	value := new(code.Call)
+	a.stack.push(value)
+	defer a.stack.pop()
+
+	var err error
+	value.Function, err = mapAstNodeTo[code.Callable](original.Function, a)
+	if err != nil {
+		return nil, err
+	}
+
+	value.Arguments, err = mapAstNodesTo[code.Value](original.Arguments, a)
+	if err != nil {
+		return nil, err
+	}
+
+	return value, nil
+}
+
+func (a *astToCodeMapper) MapFunction(original ast.Function) (code.Node, error) {
+	value := new(code.Function)
+	a.stack.push(value)
+	defer a.stack.pop()
+
+	value.Name = original.Name
+
+	return value, nil
+}
+
+func (a *astToCodeMapper) MapFunctionProperty(original ast.FunctionProperty) (code.Node, error) {
+	value := new(code.FunctionProperty)
+	a.stack.push(value)
+	defer a.stack.pop()
+
+	var err error
+	value.Of, err = mapAstNodeTo[code.Value](original.Of, a)
+	if err != nil {
+		return nil, err
+	}
+
+	value.Name = original.Name
+
+	return value, nil
+}
+
+func (a *astToCodeMapper) MapNew(original ast.New) (code.Node, error) {
+	value := new(code.New)
+	a.stack.push(value)
+	defer a.stack.pop()
+
+	var err error
+	value.Model, err = mapAstNodeTo[*code.Model](original.Model, a)
+	if err != nil {
+		return nil, err
+	}
+
+	return value, nil
+}
+
+func (a *astToCodeMapper) MapDeclare(original ast.Declare) (code.Node, error) {
+	value := new(code.Declare)
+	a.stack.push(value)
+	defer a.stack.pop()
+
+	value.Name = original.Name
+
+	var err error
+	value.Value, err = mapAstNodeTo[code.Value](original.Value, a)
+	if err != nil {
+		return nil, err
+	}
+
+	value.StatementMetadata, err = a.getStatementMetadata()
+	if err != nil {
+		return nil, err
+	}
+
+	value.Type, err = mapValueToType(value.Value)
+	if err != nil {
+		return nil, err
 	}
 
 	return value, nil
@@ -482,14 +742,27 @@ func mapAstNodeTo[T code.Node](original ast.Node, mapper *astToCodeMapper) (T, e
 	return codeType, nil
 }
 
-func validateName(name string) error {
-	if strings.Contains(name, " ") {
-		return errors.New("space characters")
+func mapAstNodesTo[T code.Node, V ast.Node](originalNodes []V, mapper *astToCodeMapper) ([]T, error) {
+	var mappedCodeNodes []T
+	for _, original := range originalNodes {
+		mappedCode, err := mapAstNodeTo[T](original, mapper)
+		if err != nil {
+			return nil, err
+		}
+		mappedCodeNodes = append(mappedCodeNodes, mappedCode)
 	}
 
-	if strings.ToUpper(name)[0] != name[0] {
-		return fmt.Errorf("first letter of variable name must be capitalized: \"%s\"", name)
+	return mappedCodeNodes, nil
+}
+
+func (a *astToCodeMapper) getStatementMetadata() (code.StatementMetadata, error) {
+	var value code.StatementMetadata
+
+	var ok bool
+	value.Parent, ok = firstOfType[*code.FunctionDef](a.stack)
+	if !ok {
+		return code.StatementMetadata{}, errors.New("no function def found as parent of statement")
 	}
 
-	return nil
+	return value, nil
 }

@@ -17,6 +17,10 @@ func (g Group) String(config Config) string {
 	sb := strings.Builder{}
 
 	for _, span := range g {
+		if span == nil {
+			continue
+		}
+
 		sb.WriteString(span.String(config))
 	}
 
@@ -41,11 +45,33 @@ type Block []Node
 
 func (b Block) String(config Config) string {
 	sb := strings.Builder{}
-	for i, span := range b {
-		sb.WriteString(span.String(config))
+	for i, node := range b {
+		if node == nil {
+			continue
+		}
+
+		sb.WriteString(node.String(config))
 
 		if i != len(b)-1 {
 			sb.WriteRune('\n')
+		}
+	}
+
+	return sb.String()
+}
+
+type Join struct {
+	Nodes []Node
+	Sep   string
+}
+
+func (j Join) String(config Config) string {
+	sb := strings.Builder{}
+	for i, node := range j.Nodes {
+		sb.WriteString(node.String(config))
+
+		if i != len(j.Nodes)-1 {
+			sb.WriteString(j.Sep)
 		}
 	}
 
