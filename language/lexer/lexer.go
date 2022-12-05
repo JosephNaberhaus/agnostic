@@ -3,6 +3,7 @@
 package lexer
 
 import (
+	"errors"
 	"github.com/JosephNaberhaus/agnostic/ast"
 )
 
@@ -26,6 +27,12 @@ func Test(rawText string) (ast.Module, error) {
 		repeat(first(
 			emptyLineConsumer(),
 			handleNoError(
+				constantDefConsumer(),
+				func(constant ast.ConstantDef) {
+					module.Constants = append(module.Constants, constant)
+				},
+			),
+			handleNoError(
 				modelDefConsumer(),
 				func(model ast.ModelDef) {
 					module.Models = append(module.Models, model)
@@ -48,4 +55,37 @@ func Test(rawText string) (ast.Module, error) {
 	}
 
 	return module, nil
+}
+
+func constantDefConsumer() consumer[ast.ConstantDef] {
+	var result ast.ConstantDef
+	return attempt(
+		&result,
+		inOrder(
+			anyWhitespaceConsumer(),
+			skip(stringConsumer("const")),
+			allWhitespaceConsumer(),
+			handleNoError(
+				alphaConsumer(),
+				func(name string) {
+					result.Name = name
+				},
+			),
+			anyWhitespaceConsumer(),
+			skip(stringConsumer("=")),
+			anyWhitespaceConsumer(),
+			handle(
+				valueConsumer(),
+				func(value ast.Value) error {
+					if constantValue, ok := value.(ast.ConstantValue); ok {
+						result.Value = constantValue
+						return nil
+					}
+
+					return errors.New("constant def can only take constant values")
+				},
+			),
+			skip(stringConsumer(";")),
+		),
+	)
 }

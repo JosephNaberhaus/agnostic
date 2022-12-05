@@ -49,7 +49,13 @@ func isNumeric(r rune) bool {
 
 func intConsumer() consumer[*big.Int] {
 	return mapResult(
-		allWhileConsumer(isNumeric, "expected one ore more numeric characters"),
+		reduce(
+			func(prev, new string) string {
+				return prev + new
+			},
+			optional(stringConsumer("-")),
+			allWhileConsumer(isNumeric, "expected one ore more numeric characters"),
+		),
 		func(numberStr string) (*big.Int, error) {
 			number := new(big.Int)
 			number, ok := number.SetString(numberStr, 10)

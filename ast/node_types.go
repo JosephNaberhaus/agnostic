@@ -26,6 +26,12 @@ type Value interface {
 	isValue()
 }
 
+type ConstantValue interface {
+	Value
+	// isConstantValue is only a type-guard to limit what can be used as a ConstantValue.
+	isConstantValue()
+}
+
 type Callable interface {
 	Node
 	// isCallable is only a type-guard to limit what can be used as a callable

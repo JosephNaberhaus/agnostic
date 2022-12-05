@@ -1,35 +1,76 @@
-module FirstTest
+module DayTwo
 
-model Point {
-    x: string;
-    y: int;
+const rock = 0;
+const paper = 1;
+const scissors = 2;
+
+const beats = {
+    rock: scissors,
+    paper: rock,
+    scissors: paper
+};
+
+const losesTo = {
+    rock: paper,
+    paper: scissors,
+    scissors: rock
+};
+
+const theirMoveToMove = {
+    int('A'): rock,
+    int('B'): paper,
+    int('C'): scissors
+};
+
+const myMoveToMove = {
+    'X': rock,
+    'Y': paper,
+    'Z': scissors
+};
+
+int getScore(theirMove: int, myMove: int) {
+    if (beats[myMove] == theirMove) {
+        return 6 + myMove;
+    } else if (beats[theirMove] == myMove) {
+        return myMove;
+    }
+    
+    return 3 + myMove;
 }
 
-model Test{
-    pos: Point;
+int partOne(lines: []string) {
+    var score = 0;
+    for (var line in lines) {
+        var theirMove = theirMoveToMove[int(line[0])];
+        var myMove = myMoveToMove[int(line[2])];
 
-    value: string;
+        score = score + getScore(theirMove, myMove);
+    }
 
-    number : int ;
+    return score;
+}
 
-    lookup: map<int, list<int>>;
+const lose = 'X';
+const draw = 'Y';
+const win = 'Z';
 
-    things: list<list<int>>;
+int partTwo(lines: []string) {
+    var score = 0;
+    for (var line in lines) {
+        var theirMove = theirMoveToMove[int(line[0])];
+        var myGoal = myMoveToMove[int(line[2])];
 
-    int test() {
-        number = 42 + 2;
-
-        if (things[1][1] == lookup[1][2]) {
-          number = 22;
+        var myMove = -1;
+        if (myGoal == win) {
+            myMove = beats[theirMove];
+        } else if (myGoal == lose) {
+            myMove = losesTo[theirMove];
         } else {
-          number = 12;
+            myMove = theirMove;
         }
 
-        return ((things[0])[1]);
+        score = score + getScore(theirMove, myMove);
     }
-}
 
-void testFunction() {
-    var test = new Test();
-    var testAgain = (new Test()).pos.x;
+    return score;
 }

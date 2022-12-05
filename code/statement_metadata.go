@@ -1,5 +1,7 @@
 package code
 
+type BlockMetadata struct{}
+
 type StatementMetadata struct {
 	Parent *FunctionDef
 }
@@ -25,4 +27,13 @@ type ReturnMetadata struct {
 type DeclareMetadata struct {
 	StatementMetadata
 	Type Type
+}
+
+type ForMetadata struct {
+	StatementMetadata
+}
+
+type ForInMetadata struct {
+	StatementMetadata
+	ItemType Type
 }

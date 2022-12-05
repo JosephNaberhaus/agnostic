@@ -2,8 +2,6 @@
 
 package {{ .PackageName }}
 
-import "fmt"
-
 // Node is the interface that everything in this package implements
 type Node interface {
     // isNode is only a type-guard to limit what can be used as a Node.
@@ -27,8 +25,7 @@ func MapNode[T any](node Node, mapper NodeMapper[T]) (T, error) {
         return mapper.Map{{ $node.Name }}(value)
     {{ end }}
     default:
-        var zero T
-        return zero, fmt.Errorf("unknown Node: %T", node)
+        panic("unreachable")
     }
 }
 
@@ -46,6 +43,32 @@ func MapNodes[T any, V Node](nodes []V, mapper NodeMapper[T]) ([]T, error) {
 	return resultNodes, nil
 }
 
+type NodeMapperNoError[T any] interface {
+{{ range $node := $.Nodes }}
+    Map{{ $node.Name }}NoError(original {{ if and $.UsePointersForStructs $node.IsStruct }}*{{ end }}{{ $node.Name }}) T
+{{ end }}
+}
+
+func MapNodeNoError[T any](node Node, mapper NodeMapperNoError[T]) T {
+    switch value := node.(type) {
+    {{ range $node := $.Nodes }}
+    case {{ if and $.UsePointersForStructs $node.IsStruct }}*{{ end }}{{ $node.Name }}:
+        return mapper.Map{{ $node.Name }}NoError(value)
+    {{ end }}
+    default:
+        panic("unreachable")
+    }
+}
+
+func MapNodesNoError[T any, V Node](nodes []V, mapper NodeMapperNoError[T]) []T {
+	var resultNodes []T
+	for _, node := range nodes {
+		resultNodes = append(resultNodes, MapNodeNoError(node, mapper))
+	}
+
+	return resultNodes
+}
+
 {{ range $nodeType, $implementations := $.NodeTypeImplementations }}
 type {{ $nodeType.Name }}Mapper[T any] interface {
 {{ range $implementation := $implementations }}
@@ -60,9 +83,48 @@ func Map{{ $nodeType.Name }}[T any](nodeType {{ $nodeType.Name }}, mapper {{ $no
         return mapper.Map{{ RemovePointer $implementation }}(value)
     {{ end }}
     default:
-        var zero T
-        return zero, fmt.Errorf("unknown {{ $nodeType.Name }}: %T", nodeType)
+        panic("unreachable")
     }
+}
+
+func Map{{ $nodeType.Name }}s[T any](nodes []{{ $nodeType.Name }}, mapper {{ $nodeType.Name }}Mapper[T]) ([]T, error) {
+    var resultNodes []T
+	for _, node := range nodes {
+		resultNode, err := Map{{ $nodeType.Name }}(node, mapper)
+		if err != nil {
+			return nil, err
+		}
+
+		resultNodes = append(resultNodes, resultNode)
+	}
+
+	return resultNodes, nil
+}
+
+type {{ $nodeType.Name }}MapperNoError[T any] interface {
+{{ range $implementation := $implementations }}
+    Map{{ RemovePointer $implementation }}NoError(original {{ $implementation }}) T
+{{ end }}
+}
+
+func Map{{ $nodeType.Name }}NoError[T any](node {{ $nodeType.Name }}, mapper {{ $nodeType.Name }}MapperNoError[T]) T {
+    switch value := node.(type) {
+    {{ range $implementation := $implementations }}
+    case {{ $implementation }}:
+        return mapper.Map{{ RemovePointer $implementation }}NoError(value)
+    {{ end }}
+    default:
+        panic("unreachable")
+    }
+}
+
+func Map{{ $nodeType.Name }}sNoError[T any](nodes []{{ $nodeType.Name }}, mapper {{ $nodeType.Name }}MapperNoError[T]) []T {
+    var resultNodes []T
+    for _, node := range nodes {
+    	resultNodes = append(resultNodes, Map{{ $nodeType.Name }}NoError(node, mapper))
+    }
+
+    return resultNodes
 }
 
 {{ end }}

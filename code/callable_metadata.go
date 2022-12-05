@@ -1,5 +1,7 @@
 package code
 
-type FunctionMetadata struct{}
+type FunctionMetadata struct {
+	Definition *FunctionDef
+}
 
 type FunctionPropertyMetadata struct{}

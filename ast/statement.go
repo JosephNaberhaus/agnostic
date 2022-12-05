@@ -1,5 +1,11 @@
 package ast
 
+// Block
+
+type Block struct {
+	Statements []Statement
+}
+
 // Assignment
 
 type Assignment struct {
@@ -12,17 +18,17 @@ func (a Assignment) isStatement() {}
 // If
 
 type If struct {
-	Condition  Value
-	Statements []Statement
+	Condition Value
+	Block     Block
 }
 
 type ElseIf struct {
-	Condition  Value
-	Statements []Statement
+	Condition Value
+	Block     Block
 }
 
 type Else struct {
-	Statements []Statement
+	Block Block
 }
 
 type Conditional struct {
@@ -51,3 +57,26 @@ type Declare struct {
 func (d Declare) isStatement() {}
 
 func (d Declare) isDefinition() {}
+
+// For
+
+type For struct {
+	Initialization Statement
+	Condition      Value
+	AfterEach      Statement
+	Block          Block
+}
+
+func (f For) isStatement() {}
+
+// For In
+
+type ForIn struct {
+	Iterable Value
+	ItemName string
+	Block    Block
+}
+
+func (f ForIn) isStatement() {}
+
+func (f ForIn) isDefinition() {}

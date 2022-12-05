@@ -8,6 +8,8 @@ type parserState struct {
 
 	remaining []rune
 
+	attemptHandlers [][]func()
+
 	furthestIgnorableError error
 }
 
@@ -15,6 +17,29 @@ func newRunes(text string) parserState {
 	return parserState{
 		remaining: []rune(text),
 	}
+}
+
+func (p *parserState) startAccruingAttemptHandlers() {
+	p.attemptHandlers = append(p.attemptHandlers, make([]func(), 0))
+}
+
+func (p *parserState) addAttemptHandler(handler func()) {
+	newAttemptHandlers := make([][]func(), 0, len(p.attemptHandlers))
+	for i, attemptHandlers := range p.attemptHandlers {
+		newAttemptHandlers = append(newAttemptHandlers, make([]func(), 0, len(attemptHandlers)+1))
+		for _, attemptHandler := range attemptHandlers {
+			newAttemptHandlers[i] = append(newAttemptHandlers[i], attemptHandler)
+		}
+	}
+	p.attemptHandlers = newAttemptHandlers
+
+	p.attemptHandlers[len(p.attemptHandlers)-1] = append(p.attemptHandlers[len(p.attemptHandlers)-1], handler)
+}
+
+func (p *parserState) popAttemptHandlers() []func() {
+	handlers := p.attemptHandlers[len(p.attemptHandlers)-1]
+	p.attemptHandlers = p.attemptHandlers[:len(p.attemptHandlers)-1]
+	return handlers
 }
 
 func (p *parserState) addError(err error) {

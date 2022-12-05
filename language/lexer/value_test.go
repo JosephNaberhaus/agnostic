@@ -6,7 +6,7 @@ import (
 )
 
 func TestThisThing(t *testing.T) {
-	state := newRunes("(new test()).test")
+	state := newRunes("{int('A'): 2}")
 	endState, result, err := valueConsumer()(state)
 	fmt.Printf("done! %v %v %v", endState, result, err)
 }

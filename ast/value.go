@@ -24,3 +24,11 @@ type New struct {
 }
 
 func (n New) isValue() {}
+
+// Length
+
+type Length struct {
+	Value Value
+}
+
+func (l Length) isValue() {}

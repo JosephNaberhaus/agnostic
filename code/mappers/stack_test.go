@@ -14,7 +14,7 @@ func TestCodeStack_Push(t *testing.T) {
 		&code.LiteralString{Value: "world"},
 	}
 
-	var stack codeStack
+	var stack code.Stack
 	for _, expectedValue := range expectedValues {
 		stack.push(expectedValue)
 	}
@@ -29,7 +29,7 @@ func TestCodeStack_Pop(t *testing.T) {
 		&code.LiteralString{Value: "world"},
 	}
 
-	stack := codeStack(expectedValues)
+	stack := code.Stack(expectedValues)
 	for i := len(expectedValues) - 1; i >= 0; i-- {
 		assert.Equal(t, expectedValues[i], stack.pop())
 	}
@@ -39,14 +39,14 @@ func TestCodeStack_Pop(t *testing.T) {
 
 func TestCodeStack_Peek(t *testing.T) {
 	expectedValue := &code.LiteralInt32{Value: 42}
-	stack := codeStack{expectedValue}
+	stack := code.Stack{expectedValue}
 
 	assert.Equal(t, stack.peek(), expectedValue)
 	assert.Len(t, stack, 1)
 }
 
 func TestCodeStack_Peek_Empty(t *testing.T) {
-	var stack codeStack
+	var stack code.Stack
 
 	assert.Panics(t, func() {
 		stack.peek()
@@ -55,7 +55,7 @@ func TestCodeStack_Peek_Empty(t *testing.T) {
 
 func TestCodeStack_PeekParent(t *testing.T) {
 	expectedValue := &code.LiteralInt32{Value: 42}
-	stack := codeStack{
+	stack := code.Stack{
 		expectedValue,
 		&code.LiteralString{Value: "hello"},
 	}
@@ -65,7 +65,7 @@ func TestCodeStack_PeekParent(t *testing.T) {
 }
 
 func TestCodeStack_PeekParent_OneElement(t *testing.T) {
-	stack := codeStack{&code.LiteralString{Value: "hello"}}
+	stack := code.Stack{&code.LiteralString{Value: "hello"}}
 
 	assert.Panics(t, func() {
 		stack.peekParent()
@@ -73,23 +73,23 @@ func TestCodeStack_PeekParent_OneElement(t *testing.T) {
 }
 
 func TestCodeStack_IsEmpty(t *testing.T) {
-	var stack codeStack
+	var stack code.Stack
 	assert.True(t, stack.isEmpty())
 
-	stack = codeStack{&code.LiteralInt32{Value: 42}}
+	stack = code.Stack{&code.LiteralInt32{Value: 42}}
 	assert.False(t, stack.isEmpty())
 }
 
 func TestCodeStack_IsNotEmpty(t *testing.T) {
-	var stack codeStack
+	var stack code.Stack
 	assert.False(t, stack.isNotEmpty())
 
-	stack = codeStack{&code.LiteralInt32{Value: 42}}
+	stack = code.Stack{&code.LiteralInt32{Value: 42}}
 	assert.True(t, stack.isNotEmpty())
 }
 
 func TestCodeStack_Copy(t *testing.T) {
-	originalStack := codeStack{
+	originalStack := code.Stack{
 		&code.LiteralInt32{Value: 42},
 		&code.LiteralString{Value: "hello"},
 		&code.LiteralString{Value: "world"},
@@ -105,16 +105,16 @@ func TestCodeStack_Copy(t *testing.T) {
 }
 
 func TestCodeStack_FirstOfType(t *testing.T) {
-	var stack codeStack
+	var stack code.Stack
 
-	_, ok := firstOfType[*code.LiteralInt32](stack)
+	_, ok := code.firstOfType[*code.LiteralInt32](stack)
 	require.False(t, ok)
 
 	stack.push(&code.LiteralInt32{Value: 42})
 	stack.push(&code.LiteralString{Value: "hello"})
 	stack.push(&code.LiteralInt32{Value: 84})
 
-	result, ok := firstOfType[*code.LiteralInt32](stack)
+	result, ok := code.firstOfType[*code.LiteralInt32](stack)
 	require.True(t, ok)
 	assert.Equal(t, result.Value, int32(84))
 }

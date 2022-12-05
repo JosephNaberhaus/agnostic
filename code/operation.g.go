@@ -7,6 +7,7 @@ type UnaryOperator int
 const (
 	Not	UnaryOperator	= iota + 1
 	Negate
+	CastToInt
 )
 
 type UnaryOperation struct {
@@ -22,7 +23,13 @@ type BinaryOperator int
 const (
 	Add	BinaryOperator	= iota + 1
 	Subtract
+	Multiply
+	Divide
 	Equals
+	LessThan
+	GreaterThan
+	Or
+	And
 )
 
 type BinaryOperation struct {

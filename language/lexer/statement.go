@@ -2,8 +2,8 @@ package lexer
 
 import "github.com/JosephNaberhaus/agnostic/ast"
 
-func statementsConsumer() consumer[[]ast.Statement] {
-	var result []ast.Statement
+func blockConsumer() consumer[ast.Block] {
+	var result ast.Block
 	return attempt(
 		&result,
 		repeat(
@@ -12,7 +12,7 @@ func statementsConsumer() consumer[[]ast.Statement] {
 				handleNoError(
 					statementConsumer(),
 					func(statement ast.Statement) {
-						result = append(result, statement)
+						result.Statements = append(result.Statements, statement)
 					},
 				),
 			),
@@ -22,8 +22,35 @@ func statementsConsumer() consumer[[]ast.Statement] {
 
 func statementConsumer() consumer[ast.Statement] {
 	return first(
-		castToStatement(assignmentConsumer()),
 		castToStatement(conditionalConsumer()),
+		castToStatement(forConsumer()),
+		castToStatement(forInConsumer()),
+		singleLineStatementConsumer(),
+	)
+}
+
+func singleLineStatementConsumer() consumer[ast.Statement] {
+	var result ast.Statement
+	return attempt(
+		&result,
+		inOrder(
+			anyWhitespaceConsumer(),
+			handleNoError(
+				inlineStatementConsumer(),
+				func(statement ast.Statement) {
+					result = statement
+				},
+			),
+			anyWhitespaceConsumer(),
+			skip(stringConsumer(";")),
+			emptyLineConsumer(),
+		),
+	)
+}
+
+func inlineStatementConsumer() consumer[ast.Statement] {
+	return first(
+		castToStatement(assignmentConsumer()),
 		castToStatement(returnConsumer()),
 		castToStatement(declareConsumer()),
 	)
@@ -34,7 +61,6 @@ func assignmentConsumer() consumer[ast.Assignment] {
 	return attempt(
 		&result,
 		inOrder(
-			anyWhitespaceConsumer(),
 			handleNoError(
 				valueConsumer(),
 				func(to ast.Value) {
@@ -50,9 +76,6 @@ func assignmentConsumer() consumer[ast.Assignment] {
 					result.From = from
 				},
 			),
-			anyWhitespaceConsumer(),
-			skip(stringConsumer(";")),
-			emptyLineConsumer(),
 		),
 	)
 }
@@ -110,9 +133,9 @@ func ifConsumer() consumer[ast.If] {
 			skip(stringConsumer("{")),
 			emptyLineConsumer(),
 			handleNoError(
-				deferred(statementsConsumer),
-				func(statements []ast.Statement) {
-					result.Statements = statements
+				deferred(blockConsumer),
+				func(block ast.Block) {
+					result.Block = block
 				},
 			),
 			anyWhitespaceConsumer(),
@@ -131,7 +154,6 @@ func elseIfConsumer() consumer[ast.ElseIf] {
 			anyWhitespaceConsumer(),
 			skip(stringConsumer("(")),
 			anyWhitespaceConsumer(),
-			skip(stringConsumer("(")),
 			handleNoError(
 				valueConsumer(),
 				func(condition ast.Value) {
@@ -144,9 +166,9 @@ func elseIfConsumer() consumer[ast.ElseIf] {
 			skip(stringConsumer("{")),
 			emptyLineConsumer(),
 			handleNoError(
-				deferred(statementsConsumer),
-				func(statements []ast.Statement) {
-					result.Statements = statements
+				deferred(blockConsumer),
+				func(block ast.Block) {
+					result.Block = block
 				},
 			),
 			anyWhitespaceConsumer(),
@@ -166,9 +188,9 @@ func elseConsumer() consumer[ast.Else] {
 			skip(stringConsumer("{")),
 			emptyLineConsumer(),
 			handleNoError(
-				deferred(statementsConsumer),
-				func(statements []ast.Statement) {
-					result.Statements = statements
+				deferred(blockConsumer),
+				func(block ast.Block) {
+					result.Block = block
 				},
 			),
 			anyWhitespaceConsumer(),
@@ -182,7 +204,6 @@ func returnConsumer() consumer[ast.Return] {
 	return attempt(
 		&result,
 		inOrder(
-			anyWhitespaceConsumer(),
 			skip(stringConsumer("return")),
 			allWhitespaceConsumer(),
 			handleNoError(
@@ -191,9 +212,6 @@ func returnConsumer() consumer[ast.Return] {
 					result.Value = value
 				},
 			),
-			anyWhitespaceConsumer(),
-			skip(stringConsumer(";")),
-			emptyLineConsumer(),
 		),
 	)
 }
@@ -203,7 +221,6 @@ func declareConsumer() consumer[ast.Declare] {
 	return attempt(
 		&result,
 		inOrder(
-			anyWhitespaceConsumer(),
 			skip(stringConsumer("var")),
 			allWhitespaceConsumer(),
 			handleNoError(
@@ -221,8 +238,103 @@ func declareConsumer() consumer[ast.Declare] {
 					result.Value = value
 				},
 			),
+		),
+	)
+}
+
+func forConsumer() consumer[ast.For] {
+	var result ast.For
+	return attempt(
+		&result,
+		inOrder(
+			anyWhitespaceConsumer(),
+			skip(stringConsumer("for")),
+			anyWhitespaceConsumer(),
+			skip(stringConsumer("(")),
+			optional(handleNoError(
+				inlineStatementConsumer(),
+				func(initialization ast.Statement) {
+					result.Initialization = initialization
+				},
+			)),
 			anyWhitespaceConsumer(),
 			skip(stringConsumer(";")),
+			anyWhitespaceConsumer(),
+			optional(handleNoError(
+				valueConsumer(),
+				func(condition ast.Value) {
+					result.Condition = condition
+				},
+			)),
+			anyWhitespaceConsumer(),
+			skip(stringConsumer(";")),
+			anyWhitespaceConsumer(),
+			optional(handleNoError(
+				inlineStatementConsumer(),
+				func(afterEach ast.Statement) {
+					result.AfterEach = afterEach
+				},
+			)),
+			anyWhitespaceConsumer(),
+			skip(stringConsumer(")")),
+			anyWhitespaceConsumer(),
+			skip(stringConsumer("{")),
+			anyWhitespaceConsumer(),
+			emptyLineConsumer(),
+			handleNoError(
+				deferred(blockConsumer),
+				func(block ast.Block) {
+					result.Block = block
+				},
+			),
+			anyWhitespaceConsumer(),
+			skip(stringConsumer("}")),
+			emptyLineConsumer(),
+		),
+	)
+}
+
+func forInConsumer() consumer[ast.ForIn] {
+	var result ast.ForIn
+	return attempt(
+		&result,
+		inOrder(
+			anyWhitespaceConsumer(),
+			skip(stringConsumer("for")),
+			anyWhitespaceConsumer(),
+			skip(stringConsumer("(")),
+			anyWhitespaceConsumer(),
+			skip(stringConsumer("var")),
+			allWhitespaceConsumer(),
+			handleNoError(
+				alphaConsumer(),
+				func(itemName string) {
+					result.ItemName = itemName
+				},
+			),
+			allWhitespaceConsumer(),
+			skip(stringConsumer("in")),
+			allWhitespaceConsumer(),
+			handleNoError(
+				valueConsumer(),
+				func(iterable ast.Value) {
+					result.Iterable = iterable
+				},
+			),
+			anyWhitespaceConsumer(),
+			skip(stringConsumer(")")),
+			anyWhitespaceConsumer(),
+			skip(stringConsumer("{")),
+			anyWhitespaceConsumer(),
+			emptyLineConsumer(),
+			handleNoError(
+				deferred(blockConsumer),
+				func(block ast.Block) {
+					result.Block = block
+				},
+			),
+			anyWhitespaceConsumer(),
+			skip(stringConsumer("}")),
 			emptyLineConsumer(),
 		),
 	)

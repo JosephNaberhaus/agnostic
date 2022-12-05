@@ -9,9 +9,45 @@ type LiteralInt struct {
 
 func (l *LiteralInt) isValue()	{}
 
+func (l *LiteralInt) isConstantValue()	{}
+
+type LiteralRune struct {
+	Value	rune
+	LiteralRuneMetadata
+}
+
+func (l *LiteralRune) isValue()	{}
+
+func (l *LiteralRune) isConstantValue()	{}
+
 type LiteralString struct {
 	Value	string
 	LiteralStringMetadata
 }
 
 func (l *LiteralString) isValue()	{}
+
+func (l *LiteralString) isConstantValue()	{}
+
+type LiteralList struct {
+	Items	[]Value
+	LiteralListMetadata
+}
+
+func (l *LiteralList) isValue()	{}
+
+func (l *LiteralList) isConstantValue()	{}
+
+type KeyValue struct {
+	Key, Value	Value
+	KeyValueMetadata
+}
+
+type LiteralMap struct {
+	Entries	[]*KeyValue
+	LiteralMapMetadata
+}
+
+func (l *LiteralMap) isValue()	{}
+
+func (l *LiteralMap) isConstantValue()	{}

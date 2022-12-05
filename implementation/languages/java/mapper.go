@@ -3,6 +3,7 @@ package java
 import (
 	"fmt"
 	"github.com/JosephNaberhaus/agnostic/code"
+	"github.com/JosephNaberhaus/agnostic/code/mappers/has_node_of_type"
 	"github.com/JosephNaberhaus/agnostic/implementation"
 	"github.com/JosephNaberhaus/agnostic/implementation/text"
 )
@@ -25,6 +26,10 @@ func (m Mapper) MapLiteralString(original *code.LiteralString) (text.Node, error
 	return text.Span(fmt.Sprintf("\"%s\"", original.Value)), nil
 }
 
+func (m Mapper) MapLiteralRune(original *code.LiteralRune) (text.Node, error) {
+	return text.Span(fmt.Sprintf("%d", int(original.Value))), nil
+}
+
 func (m Mapper) MapFieldDef(original *code.FieldDef) (text.Node, error) {
 	typeNode, err := code.MapType[text.Node](original.Type, m)
 	if err != nil {
@@ -35,7 +40,6 @@ func (m Mapper) MapFieldDef(original *code.FieldDef) (text.Node, error) {
 		typeNode,
 		text.Span(" "),
 		text.Span(original.Name),
-		text.Span(";"),
 	}, nil
 }
 
@@ -92,9 +96,36 @@ func (m Mapper) MapModule(original *code.Module) (text.Node, error) {
 		return nil, err
 	}
 
+	constantNodes, err := code.MapNodes[text.Node](original.Constants, m)
+	if err != nil {
+		return nil, err
+	}
+
+	var importArrays text.Node
+	if code.MapNodeNoError[bool](original, has_node_of_type.Mapper[*code.LiteralList]{}) {
+		importArrays = text.Span("import java.util.Arrays;")
+	}
+
+	var importListNode text.Node
+	if code.MapNodeNoError[bool](original, has_node_of_type.Mapper[*code.List]{}) {
+		importListNode = text.Span("import java.util.ArrayList;")
+	}
+
+	var importMapNode text.Node
+	if code.MapNodeNoError[bool](original, has_node_of_type.Mapper[*code.Map]{}) {
+		importMapNode = text.Span("import java.util.Map;")
+	}
+
 	return text.Block{
+		importArrays,
+		importListNode,
+		importMapNode,
 		text.Span(fmt.Sprintf("class %sFunctions {", original.Name)),
 		text.IndentedBlock(functionNodes),
+		text.Span("}"),
+		text.Span(""),
+		text.Span(fmt.Sprintf("class %sConstants {", original.Name)),
+		text.IndentedBlock(constantNodes),
 		text.Span("}"),
 		text.Span(""),
 		text.Block(modelNodes),
@@ -114,12 +145,21 @@ func (m Mapper) MapUnaryOperator(original code.UnaryOperator) (text.Node, error)
 }
 
 func (m Mapper) MapUnaryOperation(original *code.UnaryOperation) (text.Node, error) {
-	operatorNode, err := m.MapUnaryOperator(original.Operator)
+	valueNode, err := code.MapValue[text.Node](original.Value, m)
 	if err != nil {
 		return nil, err
 	}
 
-	valueNode, err := code.MapValue[text.Node](original.Value, m)
+	// TODO this isn't very clean
+	if original.Operator == code.CastToInt {
+		return text.Group{
+			text.Span("(long)("),
+			valueNode,
+			text.Span(")"),
+		}, nil
+	}
+
+	operatorNode, err := m.MapUnaryOperator(original.Operator)
 	if err != nil {
 		return nil, err
 	}
@@ -132,10 +172,24 @@ func (m Mapper) MapUnaryOperation(original *code.UnaryOperation) (text.Node, err
 
 func (m Mapper) MapBinaryOperator(original code.BinaryOperator) (text.Node, error) {
 	switch original {
+	case code.Multiply:
+		return text.Span("*"), nil
+	case code.Divide:
+		return text.Span("/"), nil
 	case code.Add:
 		return text.Span("+"), nil
+	case code.Subtract:
+		return text.Span("-"), nil
 	case code.Equals:
 		return text.Span("=="), nil
+	case code.LessThan:
+		return text.Span("<"), nil
+	case code.GreaterThan:
+		return text.Span(">"), nil
+	case code.Or:
+		return text.Span("||"), nil
+	case code.And:
+		return text.Span("&&"), nil
 	}
 
 	// TODO remove the need for this
@@ -170,12 +224,47 @@ func (m Mapper) MapBinaryOperation(original *code.BinaryOperation) (text.Node, e
 }
 
 func (m Mapper) MapAssignment(original *code.Assignment) (text.Node, error) {
-	toNode, err := code.MapValue[text.Node](original.To, m)
+	fromNode, err := code.MapValue[text.Node](original.From, m)
 	if err != nil {
 		return nil, err
 	}
 
-	fromNode, err := code.MapValue[text.Node](original.From, m)
+	if lookup, ok := original.To.(*code.Lookup); ok {
+		lookupFromNode, err := code.MapValue[text.Node](lookup.From, m)
+		if err != nil {
+			return nil, err
+		}
+
+		lookupKeyNode, err := code.MapValue[text.Node](lookup.Key, m)
+		if err != nil {
+			return nil, err
+		}
+
+		switch lookup.LookupType {
+		case code.LookupTypeList:
+			return text.Group{
+				lookupFromNode,
+				text.Span(".set((int) "),
+				lookupKeyNode,
+				text.Span(", "),
+				fromNode,
+				text.Span(")"),
+			}, nil
+		case code.LookupTypeMap:
+			return text.Group{
+				lookupFromNode,
+				text.Span(".put("),
+				lookupKeyNode,
+				text.Span(", "),
+				fromNode,
+				text.Span(")"),
+			}, nil
+		}
+
+		panic("unreachable")
+	}
+
+	toNode, err := code.MapValue[text.Node](original.To, m)
 	if err != nil {
 		return nil, err
 	}
@@ -184,7 +273,6 @@ func (m Mapper) MapAssignment(original *code.Assignment) (text.Node, error) {
 		toNode,
 		text.Span(" = "),
 		fromNode,
-		text.Span(";"),
 	}, nil
 }
 
@@ -195,9 +283,11 @@ func (m Mapper) MapModel(original *code.Model) (text.Node, error) {
 func (m Mapper) MapPrimitive(original code.Primitive) (text.Node, error) {
 	switch original {
 	case code.Boolean:
-		return text.Span("bool"), nil
+		return text.Span("Bool"), nil
 	case code.Int:
 		return text.Span("Long"), nil
+	case code.Rune:
+		return text.Span("Int"), nil
 	case code.String:
 		return text.Span("String"), nil
 	case code.Void:
@@ -214,7 +304,7 @@ func (m Mapper) MapIf(original *code.If) (text.Node, error) {
 		return nil, err
 	}
 
-	statementNodes, err := code.MapNodes[text.Node](original.Statements, m)
+	blockNode, err := m.MapBlock(original.Block)
 	if err != nil {
 		return nil, err
 	}
@@ -225,7 +315,7 @@ func (m Mapper) MapIf(original *code.If) (text.Node, error) {
 			conditionNode,
 			text.Span(") {"),
 		},
-		text.IndentedBlock(statementNodes),
+		blockNode,
 		// The closing "}" is added by MapConditional
 	}, nil
 }
@@ -236,7 +326,7 @@ func (m Mapper) MapElseIf(original *code.ElseIf) (text.Node, error) {
 		return nil, err
 	}
 
-	statementNodes, err := code.MapNodes[text.Node](original.Statements, m)
+	blockNode, err := m.MapBlock(original.Block)
 	if err != nil {
 		return nil, err
 	}
@@ -247,20 +337,20 @@ func (m Mapper) MapElseIf(original *code.ElseIf) (text.Node, error) {
 			conditionNode,
 			text.Span(") {"),
 		},
-		text.IndentedBlock(statementNodes),
+		blockNode,
 		// The closing "}" is added by MapConditional
 	}, nil
 }
 
 func (m Mapper) MapElse(original *code.Else) (text.Node, error) {
-	statementNodes, err := code.MapNodes[text.Node](original.Statements, m)
+	blockNode, err := m.MapBlock(original.Block)
 	if err != nil {
 		return nil, err
 	}
 
 	return text.Block{
 		text.Span("} else {"),
-		text.IndentedBlock(statementNodes),
+		blockNode,
 		// The closing "}" is added by MapConditional
 	}, nil
 }
@@ -286,7 +376,7 @@ func (m Mapper) MapConditional(original *code.Conditional) (text.Node, error) {
 
 	return text.Block{
 		ifNode,
-		text.Group(elseIfNodes),
+		text.Block(elseIfNodes),
 		elseNode,
 		text.Span("}"),
 	}, nil
@@ -316,7 +406,7 @@ func (m Mapper) MapList(original *code.List) (text.Node, error) {
 	}
 
 	return text.Group{
-		text.Span("List<"),
+		text.Span("ArrayList<"),
 		baseNode,
 		text.Span(">"),
 	}, nil
@@ -334,7 +424,7 @@ func (m Mapper) MapMap(original *code.Map) (text.Node, error) {
 	}
 
 	return text.Group{
-		text.Span("Map<"),
+		text.Span("HashMap<"),
 		keyNode,
 		text.Span(", "),
 		valueNode,
@@ -353,12 +443,33 @@ func (m Mapper) MapLookup(original *code.Lookup) (text.Node, error) {
 		return nil, err
 	}
 
-	return text.Group{
-		fromNode,
-		text.Span(".get("),
-		keyNode,
-		text.Span(")"),
-	}, nil
+	switch original.LookupType {
+	case code.LookupTypeList:
+		return text.Group{
+			fromNode,
+			text.Span(".get((int) "),
+			keyNode,
+			text.Span(")"),
+		}, nil
+	case code.LookupTypeMap:
+		return text.Group{
+			fromNode,
+			text.Span(".get("),
+			keyNode,
+			text.Span(")"),
+		}, nil
+	case code.LookupTypeString:
+		return text.Group{
+			fromNode,
+			text.Span(".codePointAt("),
+			fromNode,
+			text.Span(".offsetByCodePoints(0, "),
+			keyNode,
+			text.Span(".intValue()))"),
+		}, nil
+	}
+
+	panic("unreachable")
 }
 
 func (m Mapper) MapFunctionDef(original *code.FunctionDef) (text.Node, error) {
@@ -377,7 +488,7 @@ func (m Mapper) MapFunctionDef(original *code.FunctionDef) (text.Node, error) {
 		return nil, err
 	}
 
-	statementNodes, err := code.MapNodes[text.Node](original.Statements, m)
+	blockNode, err := m.MapBlock(original.Block)
 	if err != nil {
 		return nil, err
 	}
@@ -396,7 +507,7 @@ func (m Mapper) MapFunctionDef(original *code.FunctionDef) (text.Node, error) {
 			},
 			text.Span(") {"),
 		},
-		text.IndentedBlock(statementNodes),
+		blockNode,
 		text.Span("}"),
 	}, nil
 }
@@ -410,7 +521,6 @@ func (m Mapper) MapReturn(original *code.Return) (text.Node, error) {
 	return text.Group{
 		text.Span("return "),
 		valueNode,
-		text.Span(";"),
 	}, nil
 }
 
@@ -483,6 +593,189 @@ func (m Mapper) MapDeclare(original *code.Declare) (text.Node, error) {
 		text.Span(original.Name),
 		text.Span(" = "),
 		valueNode,
+	}, nil
+}
+
+func (m Mapper) MapFor(original *code.For) (text.Node, error) {
+	var initializationNode text.Node
+	if original.Initialization != nil {
+		var err error
+		initializationNode, err = code.MapStatement[text.Node](original.Initialization, m)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	conditionNode, err := code.MapValue[text.Node](original.Condition, m)
+	if err != nil {
+		return nil, err
+	}
+
+	var afterEachNode text.Node
+	if original.Initialization != nil {
+		afterEachNode, err = code.MapStatement[text.Node](original.AfterEach, m)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	blockNode, err := m.MapBlock(original.Block)
+	if err != nil {
+		return nil, err
+	}
+
+	return text.Block{
+		text.Group{
+			text.Span("for ("),
+			initializationNode,
+			text.Span("; "),
+			conditionNode,
+			text.Span("; "),
+			afterEachNode,
+			text.Span(") {"),
+		},
+		blockNode,
+		text.Span("}"),
+	}, nil
+}
+
+func (m Mapper) MapForIn(original *code.ForIn) (text.Node, error) {
+	itemTypeNode, err := code.MapType[text.Node](original.ItemType, m)
+	if err != nil {
+		return nil, err
+	}
+
+	iterableNode, err := code.MapValue[text.Node](original.Iterable, m)
+	if err != nil {
+		return nil, err
+	}
+
+	blockNode, err := m.MapBlock(original.Block)
+	if err != nil {
+		return nil, err
+	}
+
+	return text.Block{
+		text.Group{
+			text.Span("for ("),
+			itemTypeNode,
+			text.Span(" "),
+			text.Span(original.ItemName),
+			text.Span(" : "),
+			iterableNode,
+			text.Span(") {"),
+		},
+		blockNode,
+		text.Span("}"),
+	}, nil
+}
+
+func (m Mapper) MapBlock(original *code.Block) (text.Node, error) {
+	var statementNodes []text.Node
+	for _, statement := range original.Statements {
+		statementNode, err := code.MapStatement[text.Node](statement, m)
+		if err != nil {
+			return nil, err
+		}
+
+		statementNodes = append(statementNodes, text.Group{
+			statementNode,
+			text.Span(";"),
+		})
+	}
+
+	return text.IndentedBlock(statementNodes), nil
+}
+
+func (m Mapper) MapLiteralList(original *code.LiteralList) (text.Node, error) {
+	valueNodes, err := code.MapValues[text.Node](original.Items, m)
+	if err != nil {
+		return nil, err
+	}
+
+	return text.Group{
+		text.Span("("),
+		text.Span("new ArrayList(Arrays.asList("),
+		text.Join{
+			Nodes: valueNodes,
+			Sep:   ", ",
+		},
+		text.Span(")))"),
+	}, nil
+}
+
+func (m Mapper) MapLength(original *code.Length) (text.Node, error) {
+	valueNode, err := code.MapValue[text.Node](original.Value, m)
+	if err != nil {
+		return nil, err
+	}
+
+	switch original.LengthType {
+	case code.LengthTypeString:
+		return text.Group{
+			valueNode,
+			text.Span(".codePointCount(0, "),
+			valueNode,
+			text.Span(".length())"),
+		}, nil
+	case code.LengthTypeList, code.LengthTypeMap:
+		return text.Group{
+			valueNode,
+			text.Span(".size()"),
+		}, nil
+	}
+
+	panic("unreachable")
+}
+
+func (m Mapper) MapConstantDef(original *code.ConstantDef) (text.Node, error) {
+	valueNode, err := code.MapValue[text.Node](original.Value, m)
+	if err != nil {
+		return nil, err
+	}
+
+	return text.Group{
+		text.Span("public static "),
+		text.Span(original.Name),
+		text.Span(" = "),
+		valueNode,
 		text.Span(";"),
+	}, nil
+}
+
+func (m Mapper) MapKeyValue(original *code.KeyValue) (text.Node, error) {
+	keyNode, err := code.MapValue[text.Node](original.Key, m)
+	if err != nil {
+		return nil, err
+	}
+
+	valueNode, err := code.MapValue[text.Node](original.Value, m)
+	if err != nil {
+		return nil, err
+	}
+
+	return text.Group{
+		text.Span("entry("),
+		keyNode,
+		text.Span(", "),
+		valueNode,
+		text.Span(")"),
+	}, nil
+}
+
+func (m Mapper) MapLiteralMap(original *code.LiteralMap) (text.Node, error) {
+	entryNodes, err := code.MapNodes[text.Node](original.Entries, m)
+	if err != nil {
+		return nil, err
+	}
+
+	return text.Group{
+		text.Span("new HashMap("),
+		text.Span("Map.ofEntries("),
+		text.Join{
+			Nodes: entryNodes,
+			Sep:   ",",
+		},
+		text.Span("))"),
 	}, nil
 }

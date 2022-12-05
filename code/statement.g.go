@@ -2,6 +2,11 @@
 
 package code
 
+type Block struct {
+	Statements	[]Statement
+	BlockMetadata
+}
+
 type Assignment struct {
 	To	Value
 	From	Value
@@ -12,18 +17,18 @@ func (a *Assignment) isStatement()	{}
 
 type If struct {
 	Condition	Value
-	Statements	[]Statement
+	Block		*Block
 	IfMetadata
 }
 
 type ElseIf struct {
 	Condition	Value
-	Statements	[]Statement
+	Block		*Block
 	ElseIfMetadata
 }
 
 type Else struct {
-	Statements	[]Statement
+	Block	*Block
 	ElseMetadata
 }
 
@@ -52,3 +57,24 @@ type Declare struct {
 func (d *Declare) isStatement()	{}
 
 func (d *Declare) isDefinition()	{}
+
+type For struct {
+	Initialization	Statement
+	Condition	Value
+	AfterEach	Statement
+	Block		*Block
+	ForMetadata
+}
+
+func (f *For) isStatement()	{}
+
+type ForIn struct {
+	Iterable	Value
+	ItemName	string
+	Block		*Block
+	ForInMetadata
+}
+
+func (f *ForIn) isStatement()	{}
+
+func (f *ForIn) isDefinition()	{}

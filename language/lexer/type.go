@@ -36,16 +36,13 @@ func listConsumer() consumer[ast.List] {
 	return attempt(
 		&result,
 		inOrder(
-			skip(stringConsumer("list<")),
-			anyWhitespaceConsumer(),
+			skip(stringConsumer("[]")),
 			handleNoError(
 				deferred(typeConsumer),
 				func(base ast.Type) {
 					result.Base = base
 				},
 			),
-			anyWhitespaceConsumer(),
-			skip(stringConsumer(">")),
 		),
 	)
 }

@@ -5,13 +5,13 @@ import (
 	"github.com/JosephNaberhaus/agnostic/code"
 )
 
-func mapFindDefinition(targetName string, stack codeStack) (code.Definition, error) {
+func mapFindDefinition(targetName string, stack code.Stack) (code.Definition, error) {
 	mapper := &findDefinitionMapper{
 		targetName: targetName,
 	}
 
-	for stack.isNotEmpty() {
-		definition, err := code.MapNode[code.Definition](stack.pop(), mapper)
+	for stack.IsNotEmpty() {
+		definition, err := code.MapNode[code.Definition](stack.Pop(), mapper)
 		if err != nil {
 			return nil, err
 		}
@@ -36,6 +36,10 @@ func (f *findDefinitionMapper) MapLiteralInt(original *code.LiteralInt) (code.De
 }
 
 func (f *findDefinitionMapper) MapLiteralString(original *code.LiteralString) (code.Definition, error) {
+	return nil, nil
+}
+
+func (f *findDefinitionMapper) MapLiteralRune(original *code.LiteralRune) (code.Definition, error) {
 	return nil, nil
 }
 
@@ -72,7 +76,7 @@ func (f *findDefinitionMapper) MapProperty(original *code.Property) (code.Defini
 }
 
 func (f *findDefinitionMapper) MapModule(original *code.Module) (code.Definition, error) {
-	return nil, nil
+	return findDefinitionInNodes(original.Constants, f)
 }
 
 func (f *findDefinitionMapper) MapUnaryOperator(original code.UnaryOperator) (code.Definition, error) {
@@ -132,7 +136,7 @@ func (f *findDefinitionMapper) MapLookup(original *code.Lookup) (code.Definition
 }
 
 func (f *findDefinitionMapper) MapFunctionDef(original *code.FunctionDef) (code.Definition, error) {
-	return findDefinitionInNodes(original.Statements, f)
+	return findDefinitionInNodes(original.Arguments, f)
 }
 
 func (f *findDefinitionMapper) MapReturn(original *code.Return) (code.Definition, error) {
@@ -160,6 +164,46 @@ func (f *findDefinitionMapper) MapDeclare(original *code.Declare) (code.Definiti
 		return original, nil
 	}
 
+	return nil, nil
+}
+
+func (f *findDefinitionMapper) MapFor(original *code.For) (code.Definition, error) {
+	return code.MapStatement[code.Definition](original.Initialization, f)
+}
+
+func (f *findDefinitionMapper) MapForIn(original *code.ForIn) (code.Definition, error) {
+	if original.ItemName == f.targetName {
+		return original, nil
+	}
+
+	return nil, nil
+}
+
+func (f *findDefinitionMapper) MapBlock(original *code.Block) (code.Definition, error) {
+	return findDefinitionInNodes(original.Statements, f)
+}
+
+func (f *findDefinitionMapper) MapLiteralList(original *code.LiteralList) (code.Definition, error) {
+	return nil, nil
+}
+
+func (f *findDefinitionMapper) MapLength(original *code.Length) (code.Definition, error) {
+	return nil, nil
+}
+
+func (f *findDefinitionMapper) MapConstantDef(original *code.ConstantDef) (code.Definition, error) {
+	if original.Name == f.targetName {
+		return original, nil
+	}
+
+	return nil, nil
+}
+
+func (f *findDefinitionMapper) MapKeyValue(original *code.KeyValue) (code.Definition, error) {
+	return nil, nil
+}
+
+func (f *findDefinitionMapper) MapLiteralMap(original *code.LiteralMap) (code.Definition, error) {
 	return nil, nil
 }
 

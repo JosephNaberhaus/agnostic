@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/JosephNaberhaus/agnostic/code"
+	"github.com/JosephNaberhaus/agnostic/code/mappers/value_to_type"
 	"regexp"
 	"strings"
 )
@@ -59,7 +60,7 @@ func validateVariableName(name string) error {
 }
 
 func validateCondition(value code.Value) error {
-	valueType, err := mapValueToType(value)
+	valueType, err := code.MapValue[code.Type](value, value_to_type.Mapper{})
 	if err != nil {
 		return err
 	}
@@ -72,7 +73,7 @@ func validateCondition(value code.Value) error {
 }
 
 func validateReturn(ret *code.Return) error {
-	valueType, err := mapValueToType(ret.Value)
+	valueType, err := code.MapValue[code.Type](ret.Value, value_to_type.Mapper{})
 	if err != nil {
 		return err
 	}
@@ -86,11 +87,11 @@ func validateReturn(ret *code.Return) error {
 
 func validateFunction(function *code.FunctionDef) error {
 	if function.ReturnType != code.Void {
-		if len(function.Statements) == 0 {
+		if len(function.Block.Statements) == 0 {
 			return errors.New("non-void function doesn't end with a return")
 		}
 
-		_, lastStatementIsReturn := function.Statements[len(function.Statements)-1].(*code.Return)
+		_, lastStatementIsReturn := function.Block.Statements[len(function.Block.Statements)-1].(*code.Return)
 		if !lastStatementIsReturn {
 			return errors.New("non-void function doesn't end with a return")
 		}

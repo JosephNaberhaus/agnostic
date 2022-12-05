@@ -23,3 +23,10 @@ type New struct {
 }
 
 func (n *New) isValue()	{}
+
+type Length struct {
+	Value	Value
+	LengthMetadata
+}
+
+func (l *Length) isValue()	{}

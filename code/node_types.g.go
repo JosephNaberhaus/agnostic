@@ -26,6 +26,12 @@ type Value interface {
 	isValue()
 }
 
+type ConstantValue interface {
+	Value
+
+	isConstantValue()
+}
+
 type Callable interface {
 	Node
 

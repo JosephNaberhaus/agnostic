@@ -42,16 +42,18 @@ func inOrder(consumers ...consumer[void]) consumer[void] {
 }
 
 // optional creates a consumer that tries to run the consumer that it is given.
-// If the consumer fails, then the error is swallowed.
-func optional(consumer consumer[void]) consumer[void] {
-	return func(text parserState) (parserState, void, error) {
-		newText, result, err := consumer(text)
+// If the consumer fails, then the error is swallowed and the zero value is returned for the result.
+func optional[T any](consumer consumer[T]) consumer[T] {
+	return func(state parserState) (parserState, T, error) {
+		newState, result, err := consumer(state)
 		if err != nil {
-			text.addError(err)
-			return text, nil, nil
+			state.addError(err)
+
+			var zero T
+			return state, zero, nil
 		}
 
-		return newText, result, nil
+		return newState, result, nil
 	}
 }
 
@@ -87,9 +89,10 @@ func skip[T any](consumer consumer[T]) consumer[void] {
 	}
 }
 
+// TODO this needs to go onto the attempt handlers or something
 func handle[T any](consumer consumer[T], handler func(T) error) consumer[void] {
 	return func(r parserState) (parserState, void, error) {
-		newTokens, result, err := consumer(r)
+		newState, result, err := consumer(r)
 		if err != nil {
 			return parserState{}, nil, err
 		}
@@ -99,34 +102,46 @@ func handle[T any](consumer consumer[T], handler func(T) error) consumer[void] {
 			return parserState{}, nil, err
 		}
 
-		return newTokens, nil, nil
+		return newState, nil, nil
 	}
 }
 
 func handleNoError[T any](consumer consumer[T], handler func(T)) consumer[void] {
-	return func(r parserState) (parserState, void, error) {
-		newTokens, result, err := consumer(r)
+	return func(state parserState) (parserState, void, error) {
+		newState, result, err := consumer(state)
 		if err != nil {
 			return parserState{}, nil, err
 		}
 
-		handler(result)
+		if len(newState.attemptHandlers) == 0 {
+			handler(result)
+		} else {
+			newState.addAttemptHandler(func() {
+				handler(result)
+			})
+		}
 
-		return newTokens, nil, nil
+		return newState, nil, nil
 	}
 }
 
 func attempt[T any](result *T, consumer consumer[void]) consumer[T] {
-	return func(text parserState) (parserState, T, error) {
+	return func(state parserState) (parserState, T, error) {
 		var zero T
 		*result = zero
 
-		newText, _, err := consumer(text)
+		state.startAccruingAttemptHandlers()
+
+		newState, _, err := consumer(state)
 		if err != nil {
 			return parserState{}, zero, err
 		}
 
-		return newText, *result, nil
+		for _, handler := range newState.popAttemptHandlers() {
+			handler()
+		}
+
+		return newState, *result, nil
 	}
 }
 
@@ -169,13 +184,21 @@ func deferred[T any](consumerFactory func() consumer[T]) consumer[T] {
 	}
 }
 
-func lookahead(consumer consumer[void]) consumer[void] {
-	return func(state parserState) (parserState, void, error) {
-		_, _, err := consumer(state)
-		if err != nil {
-			return parserState{}, nil, err
+func reduce[T any](reduce func(prev, new T) T, consumers ...consumer[T]) consumer[T] {
+	return func(state parserState) (parserState, T, error) {
+		var result T
+
+		for _, consumer := range consumers {
+			newState, newResult, err := consumer(state)
+			if err != nil {
+				var zero T
+				return parserState{}, zero, err
+			}
+
+			result = reduce(result, newResult)
+			state = newState
 		}
 
-		return state, nil, nil
+		return state, result, nil
 	}
 }

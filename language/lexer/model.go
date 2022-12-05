@@ -110,20 +110,78 @@ func functionDefConsumer() consumer[ast.FunctionDef] {
 			),
 			anyWhitespaceConsumer(),
 			skip(stringConsumer("(")),
-			// TODO arguments
+			handleNoError(
+				argumentsConsumer(),
+				func(arguments []ast.ArgumentDef) {
+					result.Arguments = arguments
+				},
+			),
 			skip(stringConsumer(")")),
 			anyWhitespaceConsumer(),
 			skip(stringConsumer("{")),
 			emptyLineConsumer(),
 			handleNoError(
-				statementsConsumer(),
-				func(statements []ast.Statement) {
-					result.Statements = statements
+				blockConsumer(),
+				func(block ast.Block) {
+					result.Block = block
 				},
 			),
 			anyWhitespaceConsumer(),
 			skip(stringConsumer("}")),
 			emptyLineConsumer(),
+		),
+	)
+}
+
+func argumentsConsumer() consumer[[]ast.ArgumentDef] {
+	var result []ast.ArgumentDef
+	return attempt(
+		&result,
+		inOrder(
+			repeat(inOrder(
+				anyWhitespaceConsumer(),
+				handleNoError(
+					argumentConsumer(),
+					func(argument ast.ArgumentDef) {
+						result = append(result, argument)
+					},
+				),
+				anyWhitespaceConsumer(),
+				skip(stringConsumer(",")),
+			)),
+			anyWhitespaceConsumer(),
+			optional(
+				handleNoError(
+					argumentConsumer(),
+					func(argument ast.ArgumentDef) {
+						result = append(result, argument)
+					},
+				),
+			),
+		),
+	)
+}
+
+func argumentConsumer() consumer[ast.ArgumentDef] {
+	var result ast.ArgumentDef
+	return attempt(
+		&result,
+		inOrder(
+			handleNoError(
+				alphaConsumer(),
+				func(name string) {
+					result.Name = name
+				},
+			),
+			anyWhitespaceConsumer(),
+			skip(stringConsumer(":")),
+			anyWhitespaceConsumer(),
+			handleNoError(
+				typeConsumer(),
+				func(argumentType ast.Type) {
+					result.Type = argumentType
+				},
+			),
 		),
 	)
 }

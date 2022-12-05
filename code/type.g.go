@@ -14,6 +14,7 @@ type Primitive int
 const (
 	Boolean	Primitive	= iota + 1
 	Int
+	Rune
 	String
 	Void
 )
