@@ -1,6 +1,9 @@
 package lexer
 
-import "github.com/JosephNaberhaus/agnostic/ast"
+import (
+	"errors"
+	"github.com/JosephNaberhaus/agnostic/ast"
+)
 
 func blockConsumer() consumer[ast.Block] {
 	var result ast.Block
@@ -53,30 +56,64 @@ func inlineStatementConsumer() consumer[ast.Statement] {
 		castToStatement(assignmentConsumer()),
 		castToStatement(returnConsumer()),
 		castToStatement(declareConsumer()),
+		castToStatement(callConsumer()),
 	)
 }
 
 func assignmentConsumer() consumer[ast.Assignment] {
-	var result ast.Assignment
-	return attempt(
-		&result,
-		inOrder(
-			handleNoError(
-				valueConsumer(),
-				func(to ast.Value) {
-					result.To = to
-				},
-			),
-			anyWhitespaceConsumer(),
-			skip(stringConsumer("=")),
-			anyWhitespaceConsumer(),
-			handleNoError(
-				valueConsumer(),
-				func(from ast.Value) {
-					result.From = from
-				},
+	type resultType struct {
+		to       ast.Value
+		from     ast.Value
+		operator ast.BinaryOperator
+	}
+	var result resultType
+	return mapResult(
+		attempt(
+			&result,
+			inOrder(
+				handleNoError(
+					valueConsumer(),
+					func(to ast.Value) {
+						result.to = to
+					},
+				),
+				anyWhitespaceConsumer(),
+				optional(handleNoError(
+					first(
+						mapResultToConstant(stringConsumer("+"), ast.Add),
+						mapResultToConstant(stringConsumer("-"), ast.Subtract),
+						mapResultToConstant(stringConsumer("*"), ast.Multiply),
+						mapResultToConstant(stringConsumer("/"), ast.Divide),
+					),
+					func(operator ast.BinaryOperator) {
+						result.operator = operator
+					},
+				)),
+				skip(stringConsumer("=")),
+				anyWhitespaceConsumer(),
+				handleNoError(
+					valueConsumer(),
+					func(from ast.Value) {
+						result.from = from
+					},
+				),
 			),
 		),
+		func(result resultType) (ast.Assignment, error) {
+			from := result.from
+			if result.operator != 0 {
+				from = ast.BinaryOperation{
+					Left:     result.to,
+					Operator: result.operator,
+					Right:    result.from,
+				}
+			}
+
+			return ast.Assignment{
+				To:   result.to,
+				From: from,
+			}, nil
+		},
 	)
 }
 
@@ -337,5 +374,18 @@ func forInConsumer() consumer[ast.ForIn] {
 			skip(stringConsumer("}")),
 			emptyLineConsumer(),
 		),
+	)
+}
+
+func callConsumer() consumer[ast.Call] {
+	return mapResult(
+		valueConsumer(),
+		func(value ast.Value) (ast.Call, error) {
+			if call, ok := value.(ast.Call); ok {
+				return call, nil
+			}
+
+			return ast.Call{}, errors.New("expected function call")
+		},
 	)
 }

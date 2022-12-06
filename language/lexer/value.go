@@ -8,6 +8,13 @@ import (
 	"math/big"
 )
 
+func boolLiteralConsumer() consumer[ast.LiteralBool] {
+	return first(
+		mapResultToConstant(stringConsumer("false"), ast.LiteralBool{Value: false}),
+		mapResultToConstant(stringConsumer("true"), ast.LiteralBool{Value: true}),
+	)
+}
+
 func intLiteralConsumer() consumer[ast.LiteralInt] {
 	return mapResult(
 		intConsumer(),
@@ -24,6 +31,28 @@ func intLiteralConsumer() consumer[ast.LiteralInt] {
 				Value: number.Int64(),
 			}, nil
 		},
+	)
+}
+
+func stringLiteralConsumer() consumer[ast.LiteralString] {
+	var result ast.LiteralString
+	return attempt(
+		&result,
+		inOrder(
+			skip(stringConsumer("\"")),
+			handleNoError(
+				func(state parserState) (parserState, string, error) {
+					value := state.consumeUntilStr(func(r rune) bool {
+						return r == '"'
+					})
+					return state, value, nil
+				},
+				func(value string) {
+					result.Value = value
+				},
+			),
+			skip(stringConsumer("\"")),
+		),
 	)
 }
 
@@ -55,6 +84,44 @@ func runeLiteralConsumer() consumer[ast.LiteralRune] {
 	)
 }
 
+func emptyListConsumer() consumer[ast.EmptyList] {
+	var result ast.EmptyList
+	return attempt(
+		&result,
+		inOrder(
+			skip(stringConsumer("make(")),
+			anyWhitespaceConsumer(),
+			handleNoError(
+				listConsumer(),
+				func(list ast.List) {
+					result.Type = list.Base
+				},
+			),
+			anyWhitespaceConsumer(),
+			skip(stringConsumer(")")),
+		),
+	)
+}
+
+func emptySetConsumer() consumer[ast.EmptySet] {
+	var result ast.EmptySet
+	return attempt(
+		&result,
+		inOrder(
+			skip(stringConsumer("make(")),
+			anyWhitespaceConsumer(),
+			handleNoError(
+				setConsumer(),
+				func(set ast.Set) {
+					result.Type = set.Base
+				},
+			),
+			anyWhitespaceConsumer(),
+			skip(stringConsumer(")")),
+		),
+	)
+}
+
 type operatorType int
 
 const (
@@ -64,6 +131,7 @@ const (
 	function
 	listLiteral
 	mapLiteral
+	setLiteral
 	property
 	not
 	multiply
@@ -71,34 +139,38 @@ const (
 	subtract
 	add
 	equal
+	notEqual
 	lookup
 	newModel
 	lessThan
+	lessThanOrEqualTo
 	greaterThan
+	greaterThanOrEqualTo
 	and
 	or
 	castToInt
+	castToString
 )
 
 const negativeInf = math.MinInt
 
 func (o operatorType) precedence() int {
 	switch o {
-	case openParen, separator, colon, lookup, function, listLiteral, mapLiteral:
+	case openParen, separator, colon, listLiteral, mapLiteral, setLiteral, function, lookup:
 		return negativeInf
 	case or:
 		return 1
 	case and:
 		return 2
-	case equal:
+	case equal, notEqual:
 		return 3
-	case lessThan, greaterThan:
+	case lessThan, lessThanOrEqualTo, greaterThan, greaterThanOrEqualTo:
 		return 4
 	case add, subtract:
 		return 5
 	case multiply, divide:
 		return 6
-	case not, newModel, castToInt:
+	case not, newModel, castToInt, castToString:
 		return 7
 	case property:
 		return 8
@@ -126,16 +198,19 @@ func (b binaryOperator) operatorType() operatorType {
 }
 
 const (
-	multiplyOperator    = binaryOperator(multiply)
-	divideOperator      = binaryOperator(divide)
-	subtractOperator    = binaryOperator(subtract)
-	addOperator         = binaryOperator(add)
-	equalOperator       = binaryOperator(equal)
-	propertyOperator    = binaryOperator(property)
-	lessThanOperator    = binaryOperator(lessThan)
-	greaterThanOperator = binaryOperator(greaterThan)
-	andOperator         = binaryOperator(and)
-	orOperator          = binaryOperator(or)
+	multiplyOperator             = binaryOperator(multiply)
+	divideOperator               = binaryOperator(divide)
+	subtractOperator             = binaryOperator(subtract)
+	addOperator                  = binaryOperator(add)
+	equalOperator                = binaryOperator(equal)
+	notEqualOperator             = binaryOperator(notEqual)
+	propertyOperator             = binaryOperator(property)
+	lessThanOperator             = binaryOperator(lessThan)
+	lessThanOrEqualToOperator    = binaryOperator(lessThanOrEqualTo)
+	greaterThanOperator          = binaryOperator(greaterThan)
+	greaterThanOrEqualToOperator = binaryOperator(greaterThanOrEqualTo)
+	andOperator                  = binaryOperator(and)
+	orOperator                   = binaryOperator(or)
 )
 
 type unaryOperator operatorType
@@ -145,9 +220,10 @@ func (u unaryOperator) operatorType() operatorType {
 }
 
 const (
-	newModelOperator  = unaryOperator(newModel)
-	notOperator       = unaryOperator(not)
-	castToIntOperator = unaryOperator(castToInt)
+	newModelOperator     = unaryOperator(newModel)
+	notOperator          = unaryOperator(not)
+	castToIntOperator    = unaryOperator(castToInt)
+	castToStringOperator = unaryOperator(castToString)
 )
 
 type operator interface {
@@ -168,6 +244,14 @@ type listLiteralOperator struct {
 
 func (l *listLiteralOperator) operatorType() operatorType {
 	return listLiteral
+}
+
+type setLiteralOperator struct {
+	numItems int
+}
+
+func (l *setLiteralOperator) operatorType() operatorType {
+	return setLiteral
 }
 
 type mapLiteralOperator struct {
@@ -218,6 +302,26 @@ func (s *stack[T]) isNotEmpty() bool {
 	return len(*s) != 0
 }
 
+func (s *stack[T]) length() int {
+	return len(*s)
+}
+
+func (s *stack[T]) any(condition func(T) bool) bool {
+	for _, value := range *s {
+		if condition(value) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (s *stack[T]) copy() *stack[T] {
+	stackCopy := make(stack[T], len(*s))
+	copy(stackCopy, *s)
+	return &stackCopy
+}
+
 func unaryOperatorToAst(value ast.Value, op operator) (ast.Value, error) {
 	if op.operatorType() == newModel {
 		valueAsVariable, ok := value.(ast.Variable)
@@ -239,6 +343,8 @@ func unaryOperatorToAst(value ast.Value, op operator) (ast.Value, error) {
 		astUnaryOperator = ast.Not
 	case castToInt:
 		astUnaryOperator = ast.CastToInt
+	case castToString:
+		astUnaryOperator = ast.CastToString
 	}
 
 	return ast.UnaryOperation{
@@ -278,11 +384,17 @@ func binaryOperationToAst(left ast.Value, op operator, right ast.Value) (ast.Val
 	case subtractOperator:
 		astBinaryOperator = ast.Subtract
 	case equalOperator:
-		astBinaryOperator = ast.Equals
+		astBinaryOperator = ast.Equal
+	case notEqualOperator:
+		astBinaryOperator = ast.NotEqual
 	case lessThanOperator:
 		astBinaryOperator = ast.LessThan
+	case lessThanOrEqualToOperator:
+		astBinaryOperator = ast.LessThanOrEqualTo
 	case greaterThanOperator:
 		astBinaryOperator = ast.GreaterThan
+	case greaterThanOrEqualToOperator:
+		astBinaryOperator = ast.GreaterThanOrEqualTo
 	case andOperator:
 		astBinaryOperator = ast.And
 	case orOperator:
@@ -299,8 +411,9 @@ func binaryOperationToAst(left ast.Value, op operator, right ast.Value) (ast.Val
 }
 
 type token struct {
-	value ast.Value
-	op    operator
+	value            ast.Value
+	wasValueProducer bool
+	op               operator
 }
 
 func (t token) isValue() bool {
@@ -316,17 +429,27 @@ func valueConsumer() consumer[ast.Value] {
 		valueStack := new(stack[ast.Value])
 		operatorStack := new(stack[operator])
 
-		addOperatorToValueStack := func(op operator) error {
+		// TODO this is a hack
+		var checkValid func()
+
+		addOperatorToValueStackHandler := func(op operator, valueStack *stack[ast.Value]) error {
 			switch op := op.(type) {
 			case unaryOperator:
+				if valueStack.length() < 1 {
+					return errors.New("unary operation requires one value")
+				}
+
 				result, err := unaryOperatorToAst(valueStack.pop(), op)
 				if err != nil {
 					return err
 				}
 
 				valueStack.push(result)
-				return nil
 			case binaryOperator:
+				if valueStack.length() < 2 {
+					return errors.New("binary operation requires two values")
+				}
+
 				right := valueStack.pop()
 				left := valueStack.pop()
 
@@ -336,7 +459,6 @@ func valueConsumer() consumer[ast.Value] {
 				}
 
 				valueStack.push(result)
-				return nil
 			case *functionOperator:
 				arguments := make([]ast.Value, op.numArgs)
 				for i := 0; i < op.numArgs; i++ {
@@ -363,7 +485,6 @@ func valueConsumer() consumer[ast.Value] {
 					Function:  function,
 					Arguments: arguments,
 				})
-				return nil
 			case *listLiteralOperator:
 				items := make([]ast.Value, op.numItems)
 				for i := 0; i < op.numItems; i++ {
@@ -371,7 +492,6 @@ func valueConsumer() consumer[ast.Value] {
 				}
 
 				valueStack.push(ast.LiteralList{Items: items})
-				return nil
 			case *mapLiteralOperator:
 				entries := make([]ast.KeyValue, op.numEntries)
 				for i := 0; i < op.numEntries; i++ {
@@ -382,19 +502,35 @@ func valueConsumer() consumer[ast.Value] {
 				}
 
 				valueStack.push(ast.LiteralMap{Entries: entries})
-				return nil
+			case *setLiteralOperator:
+				items := make([]ast.Value, op.numItems)
+				for i := 0; i < op.numItems; i++ {
+					items[op.numItems-i-1] = valueStack.pop()
+				}
+
+				valueStack.push(ast.LiteralSet{Items: items})
 			case *lookupOperator:
 				valueStack.push(ast.Lookup{
 					Key:  valueStack.pop(),
 					From: valueStack.pop(),
 				})
-				return nil
+			default:
+				return errors.New("invalid operator")
 			}
 
-			return errors.New("invalid operator")
+			return nil
 		}
 
-		var lastHandled token
+		addOperatorToValueStack := func(op operator) error {
+			err := addOperatorToValueStackHandler(op, valueStack)
+			if err != nil {
+				return err
+			}
+
+			return nil
+		}
+
+		lastHandled := token{wasValueProducer: false}
 
 		handleValue := func(value ast.Value) {
 			lastHandled = token{value: value}
@@ -402,11 +538,9 @@ func valueConsumer() consumer[ast.Value] {
 			valueStack.push(value)
 		}
 
-		handleOperator := func(op operator) error {
-			lastHandled = token{op: op}
-
-			if op.operatorType().precedence() != negativeInf {
-				for operatorStack.isNotEmpty() && op.operatorType().precedence() <= operatorStack.peek().operatorType().precedence() {
+		handlePrecedence := func(precedence int) error {
+			if precedence != negativeInf {
+				for operatorStack.isNotEmpty() && precedence <= operatorStack.peek().operatorType().precedence() {
 
 					err := addOperatorToValueStack(operatorStack.pop())
 					if err != nil {
@@ -415,244 +549,395 @@ func valueConsumer() consumer[ast.Value] {
 				}
 			}
 
+			return nil
+		}
+
+		handleOperator := func(op operator) error {
+			lastHandled = token{op: op}
+
+			err := handlePrecedence(op.operatorType().precedence())
+			if err != nil {
+				return err
+			}
+
 			operatorStack.push(op)
 			return nil
 		}
 
+		emptyStacks := func(valueStack *stack[ast.Value], operatorStack *stack[operator]) error {
+			for operatorStack.isNotEmpty() {
+				err := addOperatorToValueStackHandler(operatorStack.pop(), valueStack)
+				if err != nil {
+					return err
+				}
+			}
+
+			return nil
+		}
+
+		var lastValidOutput ast.Value
+		var lastValidOutputState parserState
+
+		checkValid = func() {
+			valueStackCopy := valueStack.copy()
+			operatorStackCopy := operatorStack.copy()
+
+			err := emptyStacks(valueStackCopy, operatorStackCopy)
+			if err != nil {
+				return
+			}
+
+			if valueStackCopy.length() == 1 && operatorStackCopy.isEmpty() {
+				lastValidOutput = valueStackCopy.peek()
+				lastValidOutputState = state
+			}
+		}
+
 		var err error
-		state, _, err = repeat(first(
-			allWhitespaceConsumer(),
-			// TODO this should probably only be allowed if we're consuming a map or list literal and the last thing was a comma
-			newlineConsumer(),
-			handle(
-				first(
-					castToValue(intLiteralConsumer()),
-					castToValue(runeLiteralConsumer()),
+		for state.isNotEmpty() {
+			var newState parserState
+			newState, _, err = first(
+				allWhitespaceConsumer(),
+				// TODO this should probably only be allowed if we're consuming a map or list literal and the last thing was a comma
+				newlineConsumer(),
+				handle(
+					first(
+						castToValue(boolLiteralConsumer()),
+						castToValue(intLiteralConsumer()),
+						castToValue(runeLiteralConsumer()),
+						castToValue(stringLiteralConsumer()),
+						castToValue(emptyListConsumer()),
+						castToValue(emptySetConsumer()),
+					),
+					func(value ast.Value) error {
+						handleValue(value)
+						return nil
+					},
 				),
-				func(value ast.Value) error {
-					handleValue(value)
-					return nil
-				},
-			),
-			handle(
-				first(
-					mapResultToConstant(inOrder(
-						skip(stringConsumer("new")),
-						allWhitespaceConsumer(),
-						// TODO make sure that the next character is a (
-					), newModelOperator),
-					mapResultToConstant(stringConsumer("!"), notOperator),
-					mapResultToConstant(inOrder(
-						skip(stringConsumer("int")),
-						// TODO make sure that the next character is a (
-					), castToIntOperator),
+				handle(
+					skip(stringConsumer(",")),
+					func(_ void) error {
+						for true {
+							if operatorStack.isEmpty() {
+								return errors.New("unexpected comma")
+							}
+
+							nextOpType := operatorStack.peek().operatorType()
+							if nextOpType == mapLiteral || nextOpType == listLiteral || nextOpType == setLiteral || nextOpType == function || nextOpType == separator || nextOpType == colon {
+								break
+							}
+
+							err = addOperatorToValueStack(operatorStack.pop())
+							if err != nil {
+								return err
+							}
+						}
+
+						return handleOperator(separatorOperator)
+					},
 				),
-				func(op unaryOperator) error {
-					return handleOperator(op)
-				},
-			),
-			handle(
-				first(
-					mapResultToConstant(stringConsumer("*"), multiplyOperator),
-					mapResultToConstant(stringConsumer("/"), divideOperator),
-					mapResultToConstant(stringConsumer("+"), addOperator),
-					mapResultToConstant(stringConsumer("-"), subtractOperator),
-					mapResultToConstant(stringConsumer("."), propertyOperator),
-					mapResultToConstant(stringConsumer("=="), equalOperator),
-					mapResultToConstant(stringConsumer("<"), lessThanOperator),
-					mapResultToConstant(stringConsumer(">"), greaterThanOperator),
-					mapResultToConstant(stringConsumer("&&"), andOperator),
-					mapResultToConstant(stringConsumer("||"), orOperator),
+				handle(
+					skip(stringConsumer(":")),
+					func(_ void) error {
+						for true {
+							if operatorStack.isEmpty() {
+								return errors.New("unexpected colon")
+							}
+
+							nextOpType := operatorStack.peek().operatorType()
+							if nextOpType == mapLiteral || nextOpType == separator {
+								break
+							}
+
+							err = addOperatorToValueStack(operatorStack.pop())
+							if err != nil {
+								return err
+							}
+						}
+
+						return handleOperator(colonOperator)
+					},
 				),
-				func(operator binaryOperator) error {
-					return handleOperator(operator)
-				},
-			),
-			handle(
-				skip(stringConsumer(",")),
-				func(_ void) error {
-					return handleOperator(separatorOperator)
-				},
-			),
-			handle(
-				skip(stringConsumer(":")),
-				func(_ void) error {
-					return handleOperator(colonOperator)
-				},
-			),
-			handle(
-				skip(stringConsumer("(")),
-				func(_ void) error {
-					if lastHandled.isValue() {
-						if operatorStack.isNotEmpty() && operatorStack.peek().operatorType() == newModel {
-							// TODO
-						} else if operatorStack.isNotEmpty() && operatorStack.peek().operatorType() == castToInt {
-							// TODO
-						} else {
-							return handleOperator(new(functionOperator))
-						}
-					}
-
-					return handleOperator(openParenOperator)
-				},
-			),
-			handle(
-				skip(stringConsumer(")")),
-				func(_ void) error {
-					argCount := 0
-					if !lastHandled.isOperatorOfType(function) {
-						argCount = 1
-					}
-
-					for true {
-						if operatorStack.isEmpty() {
-							return errors.New("no open parentheses found")
+				handle(
+					skip(stringConsumer("(")),
+					func(_ void) error {
+						if lastHandled.isValue() {
+							if operatorStack.isNotEmpty() && operatorStack.peek().operatorType() == newModel {
+								// TODO
+							} else if operatorStack.isNotEmpty() && operatorStack.peek().operatorType() == castToInt {
+								// TODO
+							} else if operatorStack.isNotEmpty() && operatorStack.peek().operatorType() == castToString {
+								// TODO
+							} else {
+								err = handlePrecedence(property.precedence())
+								if err != nil {
+									return err
+								}
+								return handleOperator(new(functionOperator))
+							}
 						}
 
-						if operatorStack.peek().operatorType() == openParen {
-							operatorStack.pop()
-
-							break
+						return handleOperator(openParenOperator)
+					},
+				),
+				handle(
+					skip(stringConsumer(")")),
+					func(_ void) error {
+						argCount := 0
+						if !lastHandled.isOperatorOfType(function) {
+							argCount = 1
 						}
 
-						if operatorStack.peek().operatorType() == separator {
-							operatorStack.pop()
+						for true {
+							if operatorStack.isEmpty() {
+								return errors.New("no open parentheses found")
+							}
 
-							argCount++
-							continue
+							if operatorStack.peek().operatorType() == openParen {
+								operatorStack.pop()
+
+								break
+							}
+
+							if operatorStack.peek().operatorType() == separator {
+								operatorStack.pop()
+
+								argCount++
+								continue
+							}
+
+							if op, ok := operatorStack.peek().(*functionOperator); ok {
+								op.numArgs = argCount
+
+								lastHandled = token{wasValueProducer: true}
+
+								return addOperatorToValueStack(operatorStack.pop())
+							}
+
+							err = addOperatorToValueStack(operatorStack.pop())
+							if err != nil {
+								return err
+							}
 						}
 
-						if op, ok := operatorStack.peek().(*functionOperator); ok {
-							op.numArgs = argCount
-							return addOperatorToValueStack(operatorStack.pop())
+						return nil
+					},
+				),
+				handle(
+					skip(stringConsumer("[")),
+					func(_ void) error {
+						if lastHandled.isValue() || lastHandled.wasValueProducer {
+							err = handlePrecedence(property.precedence())
+							if err != nil {
+								return err
+							}
+							return handleOperator(new(lookupOperator))
 						}
 
-						err = addOperatorToValueStack(operatorStack.pop())
-						if err != nil {
-							return err
-						}
-					}
-
-					return nil
-				},
-			),
-			handle(
-				skip(stringConsumer("[")),
-				func(_ void) error {
-					if lastHandled.isValue() {
-						return handleOperator(new(lookupOperator))
-					}
-
-					return handleOperator(new(listLiteralOperator))
-				},
-			),
-			handle(
-				skip(stringConsumer("]")),
-				func(_ void) error {
-					itemCount := 0
-					if !lastHandled.isOperatorOfType(listLiteral) {
-						itemCount = 1
-					}
-
-					for true {
-						if _, ok := operatorStack.peek().(*lookupOperator); ok {
-							return addOperatorToValueStack(operatorStack.pop())
+						return handleOperator(new(listLiteralOperator))
+					},
+				),
+				handle(
+					skip(stringConsumer("]")),
+					func(_ void) error {
+						itemCount := 0
+						if !lastHandled.isOperatorOfType(listLiteral) {
+							itemCount = 1
 						}
 
-						if op, ok := operatorStack.peek().(*listLiteralOperator); ok {
-							op.numItems = itemCount
-							return addOperatorToValueStack(operatorStack.pop())
+						for true {
+							if _, ok := operatorStack.peek().(*lookupOperator); ok {
+								return addOperatorToValueStack(operatorStack.pop())
+							}
+
+							if op, ok := operatorStack.peek().(*listLiteralOperator); ok {
+								op.numItems = itemCount
+								return addOperatorToValueStack(operatorStack.pop())
+							}
+
+							if operatorStack.peek() == separatorOperator {
+								operatorStack.pop()
+
+								itemCount++
+								continue
+							}
+
+							err = addOperatorToValueStack(operatorStack.pop())
+							if err != nil {
+								return err
+							}
 						}
 
-						if operatorStack.peek() == separatorOperator {
-							operatorStack.pop()
-
-							itemCount++
-							continue
-						}
-
-						err = addOperatorToValueStack(operatorStack.pop())
-						if err != nil {
-							return err
-						}
-					}
-
-					return nil
-				},
-			),
-			handle(
-				skip(stringConsumer("{")),
-				func(_ void) error {
-					return handleOperator(new(mapLiteralOperator))
-				},
-			),
-			handle(
-				skip(stringConsumer("}")),
-				func(_ void) error {
-					entryCount := 0
-					if !lastHandled.isOperatorOfType(mapLiteral) {
-						if operatorStack.pop() != colonOperator {
-							return errors.New("expected colon")
-						}
-
-						entryCount = 1
-					}
-
-					for true {
-						if op, ok := operatorStack.peek().(*mapLiteralOperator); ok {
-							op.numEntries = entryCount
-							return addOperatorToValueStack(operatorStack.pop())
-						}
-
-						if operatorStack.peek() == separatorOperator {
-							operatorStack.pop()
+						return nil
+					},
+				),
+				handle(
+					skip(stringConsumer("{")),
+					func(_ void) error {
+						return handleOperator(new(mapLiteralOperator))
+					},
+				),
+				handle(
+					skip(stringConsumer("}")),
+					func(_ void) error {
+						entryCount := 0
+						if !lastHandled.isOperatorOfType(mapLiteral) {
 							if operatorStack.pop() != colonOperator {
 								return errors.New("expected colon")
 							}
 
-							entryCount++
-							continue
+							entryCount = 1
 						}
 
-						err = addOperatorToValueStack(operatorStack.pop())
-						if err != nil {
-							return err
-						}
-					}
+						for true {
+							if op, ok := operatorStack.peek().(*mapLiteralOperator); ok {
+								op.numEntries = entryCount
+								return addOperatorToValueStack(operatorStack.pop())
+							}
 
-					return nil
-				},
-			),
-			handle(
-				mapResult(
-					alphaConsumer(),
-					func(name string) (ast.Variable, error) {
-						return ast.Variable{
-							Name: name,
-						}, nil
+							if operatorStack.peek() == separatorOperator {
+								operatorStack.pop()
+								if operatorStack.pop() != colonOperator {
+									return errors.New("expected colon")
+								}
+
+								entryCount++
+								continue
+							}
+
+							err = addOperatorToValueStack(operatorStack.pop())
+							if err != nil {
+								return err
+							}
+						}
+
+						return nil
 					},
 				),
-				func(value ast.Variable) error {
-					handleValue(value)
-					return nil
-				},
-			),
-		))(state)
+				handle(
+					skip(stringConsumer("<")),
+					func(_ void) error {
+						if lastHandled.isValue() || lastHandled.wasValueProducer {
+							// TODO this is literally garbage
+							return errors.New("set literal cannot be defined after a value")
+						}
+
+						return handleOperator(new(setLiteralOperator))
+					},
+				),
+				handle(
+					skip(stringConsumer(">")),
+					func(_ void) error {
+						numItems := 0
+						if !lastHandled.isOperatorOfType(setLiteral) {
+							numItems = 1
+						}
+
+						if !operatorStack.any(func(value operator) bool {
+							_, isSetLiteral := value.(*setLiteralOperator)
+							return isSetLiteral
+						}) {
+							return errors.New("expected set literal opeartor")
+						}
+
+						for true {
+							if op, ok := operatorStack.peek().(*setLiteralOperator); ok {
+								op.numItems = numItems
+								return addOperatorToValueStack(operatorStack.pop())
+							}
+
+							if operatorStack.peek() == separatorOperator {
+								operatorStack.pop()
+
+								numItems++
+								continue
+							}
+
+							err = addOperatorToValueStack(operatorStack.pop())
+							if err != nil {
+								return err
+							}
+						}
+
+						return nil
+					},
+				),
+				handle(
+					first(
+						mapResultToConstant(stringConsumer("*"), multiplyOperator),
+						mapResultToConstant(stringConsumer("/"), divideOperator),
+						mapResultToConstant(stringConsumer("+"), addOperator),
+						mapResultToConstant(stringConsumer("-"), subtractOperator),
+						mapResultToConstant(stringConsumer("."), propertyOperator),
+						mapResultToConstant(stringConsumer("=="), equalOperator),
+						mapResultToConstant(stringConsumer("!="), notEqualOperator),
+						mapResultToConstant(stringConsumer("<="), lessThanOrEqualToOperator),
+						mapResultToConstant(stringConsumer("<"), lessThanOperator),
+						mapResultToConstant(stringConsumer(">="), greaterThanOrEqualToOperator),
+						mapResultToConstant(stringConsumer(">"), greaterThanOperator),
+						mapResultToConstant(stringConsumer("&&"), andOperator),
+						mapResultToConstant(stringConsumer("||"), orOperator),
+					),
+					func(operator binaryOperator) error {
+						return handleOperator(operator)
+					},
+				),
+				handle(
+					first(
+						mapResultToConstant(inOrder(
+							skip(stringConsumer("new")),
+							allWhitespaceConsumer(),
+							// TODO make sure that the next character is a (
+						), newModelOperator),
+						mapResultToConstant(stringConsumer("!"), notOperator),
+						mapResultToConstant(inOrder(
+							skip(stringConsumer("int")),
+							// TODO make sure that the next character is a (
+						), castToIntOperator),
+						mapResultToConstant(inOrder(
+							skip(stringConsumer("string")),
+							// TODO make sure that the next character is a (
+						), castToStringOperator),
+					),
+					func(op unaryOperator) error {
+						return handleOperator(op)
+					},
+				),
+				handle(
+					mapResult(
+						alphaConsumer(),
+						func(name string) (ast.Variable, error) {
+							return ast.Variable{
+								Name: name,
+							}, nil
+						},
+					),
+					func(value ast.Variable) error {
+						handleValue(value)
+						return nil
+					},
+				),
+			)(state)
+			if err != nil {
+				break
+			}
+
+			state = newState
+			checkValid()
+		}
 		if err != nil {
+			if lastValidOutput != nil {
+				lastValidOutputState.addError(err)
+				return lastValidOutputState, lastValidOutput, nil
+			}
+
 			return parserState{}, nil, err
 		}
 
-		for operatorStack.isNotEmpty() {
-			err = addOperatorToValueStack(operatorStack.pop())
-			if err != nil {
-				return parserState{}, nil, err
-			}
+		if lastValidOutput != nil {
+			return lastValidOutputState, lastValidOutput, err
 		}
 
-		if len(*valueStack) != 1 {
-			return parserState{}, nil, errors.New("testing")
-		}
-
-		return state, valueStack.pop(), nil
+		return parserState{}, nil, errors.New("expected more operators")
 	}
 }

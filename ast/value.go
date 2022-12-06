@@ -9,6 +9,8 @@ type Call struct {
 
 func (c Call) isValue() {}
 
+func (c Call) isStatement() {}
+
 // Lookup
 
 type Lookup struct {
@@ -32,3 +34,22 @@ type Length struct {
 }
 
 func (l Length) isValue() {}
+
+// SetContains
+
+type SetContains struct {
+	Set   Value
+	Value Value
+}
+
+func (s SetContains) isValue() {}
+
+// Pop
+
+type Pop struct {
+	Value Value
+}
+
+func (p Pop) isValue() {}
+
+func (p Pop) isStatement() {}

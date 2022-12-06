@@ -9,3 +9,5 @@ type VoidMetadata struct{}
 type ListMetadata struct{}
 
 type MapMetadata struct{}
+
+type SetMetadata struct{}

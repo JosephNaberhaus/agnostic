@@ -168,6 +168,10 @@ func (f *findDefinitionMapper) MapDeclare(original *code.Declare) (code.Definiti
 }
 
 func (f *findDefinitionMapper) MapFor(original *code.For) (code.Definition, error) {
+	if original.Initialization == nil {
+		return nil, nil
+	}
+
 	return code.MapStatement[code.Definition](original.Initialization, f)
 }
 
@@ -204,6 +208,42 @@ func (f *findDefinitionMapper) MapKeyValue(original *code.KeyValue) (code.Defini
 }
 
 func (f *findDefinitionMapper) MapLiteralMap(original *code.LiteralMap) (code.Definition, error) {
+	return nil, nil
+}
+
+func (f *findDefinitionMapper) MapSet(original *code.Set) (code.Definition, error) {
+	return nil, nil
+}
+
+func (f *findDefinitionMapper) MapLiteralSet(original *code.LiteralSet) (code.Definition, error) {
+	return nil, nil
+}
+
+func (f *findDefinitionMapper) MapEmptyList(original *code.EmptyList) (code.Definition, error) {
+	return nil, nil
+}
+
+func (f *findDefinitionMapper) MapEmptySet(original *code.EmptySet) (code.Definition, error) {
+	return nil, nil
+}
+
+func (f *findDefinitionMapper) MapAddToSet(original *code.AddToSet) (code.Definition, error) {
+	return nil, nil
+}
+
+func (f *findDefinitionMapper) MapSetContains(original *code.SetContains) (code.Definition, error) {
+	return nil, nil
+}
+
+func (f *findDefinitionMapper) MapPush(original *code.Push) (code.Definition, error) {
+	return nil, nil
+}
+
+func (f *findDefinitionMapper) MapPop(original *code.Pop) (code.Definition, error) {
+	return nil, nil
+}
+
+func (f *findDefinitionMapper) MapLiteralBool(original *code.LiteralBool) (code.Definition, error) {
 	return nil, nil
 }
 

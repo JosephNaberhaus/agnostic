@@ -32,6 +32,16 @@ func (l LiteralString) isValue() {}
 
 func (l LiteralString) isConstantValue() {}
 
+// Literal Bool
+
+type LiteralBool struct {
+	Value bool
+}
+
+func (l LiteralBool) isValue() {}
+
+func (l LiteralBool) isConstantValue() {}
+
 // Literal List
 
 type LiteralList struct {
@@ -55,3 +65,33 @@ type LiteralMap struct {
 func (l LiteralMap) isValue() {}
 
 func (l LiteralMap) isConstantValue() {}
+
+// Literal Set
+
+type LiteralSet struct {
+	Items []Value
+}
+
+func (l LiteralSet) isValue() {}
+
+func (l LiteralSet) isConstantValue() {}
+
+// Empty List
+
+type EmptyList struct {
+	Type Type
+}
+
+func (e EmptyList) isValue() {}
+
+func (e EmptyList) isConstantValue() {}
+
+// Empty Set
+
+type EmptySet struct {
+	Type Type
+}
+
+func (e EmptySet) isValue() {}
+
+func (e EmptySet) isConstantValue() {}

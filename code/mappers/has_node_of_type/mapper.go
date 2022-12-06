@@ -12,7 +12,7 @@ func (m Mapper[Target]) isTargetType(node code.Node) bool {
 	return false
 }
 
-func (m Mapper[T]) MapFunctionNoError(original *code.Function) bool {
+func (m Mapper[T]) MapFunction(original *code.Function) bool {
 	if m.isTargetType(original) {
 		return true
 	}
@@ -20,7 +20,7 @@ func (m Mapper[T]) MapFunctionNoError(original *code.Function) bool {
 	return false
 }
 
-func (m Mapper[T]) MapFunctionPropertyNoError(original *code.FunctionProperty) bool {
+func (m Mapper[T]) MapFunctionProperty(original *code.FunctionProperty) bool {
 	if m.isTargetType(original) {
 		return true
 	}
@@ -32,7 +32,7 @@ func (m Mapper[T]) MapFunctionPropertyNoError(original *code.FunctionProperty) b
 	return false
 }
 
-func (m Mapper[T]) MapLiteralIntNoError(original *code.LiteralInt) bool {
+func (m Mapper[T]) MapLiteralInt(original *code.LiteralInt) bool {
 	if m.isTargetType(original) {
 		return true
 	}
@@ -40,7 +40,7 @@ func (m Mapper[T]) MapLiteralIntNoError(original *code.LiteralInt) bool {
 	return false
 }
 
-func (m Mapper[T]) MapLiteralStringNoError(original *code.LiteralString) bool {
+func (m Mapper[T]) MapLiteralString(original *code.LiteralString) bool {
 	if m.isTargetType(original) {
 		return true
 	}
@@ -48,7 +48,7 @@ func (m Mapper[T]) MapLiteralStringNoError(original *code.LiteralString) bool {
 	return false
 }
 
-func (m Mapper[T]) MapLiteralRuneNoError(original *code.LiteralRune) bool {
+func (m Mapper[T]) MapLiteralRune(original *code.LiteralRune) bool {
 	if m.isTargetType(original) {
 		return true
 	}
@@ -56,19 +56,7 @@ func (m Mapper[T]) MapLiteralRuneNoError(original *code.LiteralRune) bool {
 	return false
 }
 
-func (m Mapper[T]) MapFieldDefNoError(original *code.FieldDef) bool {
-	if m.isTargetType(original) {
-		return true
-	}
-
-	if code.MapTypeNoError[bool](original.Type, m) {
-		return true
-	}
-
-	return false
-}
-
-func (m Mapper[T]) MapArgumentDefNoError(original *code.ArgumentDef) bool {
+func (m Mapper[T]) MapFieldDef(original *code.FieldDef) bool {
 	if m.isTargetType(original) {
 		return true
 	}
@@ -80,19 +68,31 @@ func (m Mapper[T]) MapArgumentDefNoError(original *code.ArgumentDef) bool {
 	return false
 }
 
-func (m Mapper[T]) MapMethodDefNoError(original *code.MethodDef) bool {
+func (m Mapper[T]) MapArgumentDef(original *code.ArgumentDef) bool {
 	if m.isTargetType(original) {
 		return true
 	}
 
-	if m.MapFunctionDefNoError(original.Function) {
+	if code.MapTypeNoError[bool](original.Type, m) {
 		return true
 	}
 
 	return false
 }
 
-func (m Mapper[T]) MapModelDefNoError(original *code.ModelDef) bool {
+func (m Mapper[T]) MapMethodDef(original *code.MethodDef) bool {
+	if m.isTargetType(original) {
+		return true
+	}
+
+	if m.MapFunctionDef(original.Function) {
+		return true
+	}
+
+	return false
+}
+
+func (m Mapper[T]) MapModelDef(original *code.ModelDef) bool {
 	if m.isTargetType(original) {
 		return true
 	}
@@ -108,7 +108,7 @@ func (m Mapper[T]) MapModelDefNoError(original *code.ModelDef) bool {
 	return false
 }
 
-func (m Mapper[T]) MapVariableNoError(original *code.Variable) bool {
+func (m Mapper[T]) MapVariable(original *code.Variable) bool {
 	if m.isTargetType(original) {
 		return true
 	}
@@ -116,7 +116,7 @@ func (m Mapper[T]) MapVariableNoError(original *code.Variable) bool {
 	return false
 }
 
-func (m Mapper[T]) MapPropertyNoError(original *code.Property) bool {
+func (m Mapper[T]) MapProperty(original *code.Property) bool {
 	if m.isTargetType(original) {
 		return true
 	}
@@ -128,7 +128,7 @@ func (m Mapper[T]) MapPropertyNoError(original *code.Property) bool {
 	return false
 }
 
-func (m Mapper[T]) MapModuleNoError(original *code.Module) bool {
+func (m Mapper[T]) MapModule(original *code.Module) bool {
 	if m.isTargetType(original) {
 		return true
 	}
@@ -141,10 +141,14 @@ func (m Mapper[T]) MapModuleNoError(original *code.Module) bool {
 		return true
 	}
 
+	if any(code.MapNodesNoError[bool](original.Constants, m)) {
+		return true
+	}
+
 	return false
 }
 
-func (m Mapper[T]) MapFunctionDefNoError(original *code.FunctionDef) bool {
+func (m Mapper[T]) MapFunctionDef(original *code.FunctionDef) bool {
 	if m.isTargetType(original) {
 		return true
 	}
@@ -153,7 +157,7 @@ func (m Mapper[T]) MapFunctionDefNoError(original *code.FunctionDef) bool {
 		return true
 	}
 
-	if m.MapBlockNoError(original.Block) {
+	if m.MapBlock(original.Block) {
 		return true
 	}
 
@@ -164,7 +168,7 @@ func (m Mapper[T]) MapFunctionDefNoError(original *code.FunctionDef) bool {
 	return false
 }
 
-func (m Mapper[T]) MapUnaryOperatorNoError(original code.UnaryOperator) bool {
+func (m Mapper[T]) MapUnaryOperator(original code.UnaryOperator) bool {
 	if m.isTargetType(original) {
 		return true
 	}
@@ -172,7 +176,7 @@ func (m Mapper[T]) MapUnaryOperatorNoError(original code.UnaryOperator) bool {
 	return false
 }
 
-func (m Mapper[T]) MapUnaryOperationNoError(original *code.UnaryOperation) bool {
+func (m Mapper[T]) MapUnaryOperation(original *code.UnaryOperation) bool {
 	if m.isTargetType(original) {
 		return true
 	}
@@ -181,14 +185,14 @@ func (m Mapper[T]) MapUnaryOperationNoError(original *code.UnaryOperation) bool 
 		return true
 	}
 
-	if m.MapUnaryOperatorNoError(original.Operator) {
+	if m.MapUnaryOperator(original.Operator) {
 		return true
 	}
 
 	return false
 }
 
-func (m Mapper[T]) MapBinaryOperatorNoError(original code.BinaryOperator) bool {
+func (m Mapper[T]) MapBinaryOperator(original code.BinaryOperator) bool {
 	if m.isTargetType(original) {
 		return true
 	}
@@ -196,7 +200,7 @@ func (m Mapper[T]) MapBinaryOperatorNoError(original code.BinaryOperator) bool {
 	return false
 }
 
-func (m Mapper[T]) MapBinaryOperationNoError(original *code.BinaryOperation) bool {
+func (m Mapper[T]) MapBinaryOperation(original *code.BinaryOperation) bool {
 	if m.isTargetType(original) {
 		return true
 	}
@@ -205,7 +209,7 @@ func (m Mapper[T]) MapBinaryOperationNoError(original *code.BinaryOperation) boo
 		return true
 	}
 
-	if m.MapBinaryOperatorNoError(original.Operator) {
+	if m.MapBinaryOperator(original.Operator) {
 		return true
 	}
 
@@ -216,7 +220,7 @@ func (m Mapper[T]) MapBinaryOperationNoError(original *code.BinaryOperation) boo
 	return false
 }
 
-func (m Mapper[T]) MapAssignmentNoError(original *code.Assignment) bool {
+func (m Mapper[T]) MapAssignment(original *code.Assignment) bool {
 	if m.isTargetType(original) {
 		return true
 	}
@@ -232,7 +236,7 @@ func (m Mapper[T]) MapAssignmentNoError(original *code.Assignment) bool {
 	return false
 }
 
-func (m Mapper[T]) MapIfNoError(original *code.If) bool {
+func (m Mapper[T]) MapIf(original *code.If) bool {
 	if m.isTargetType(original) {
 		return true
 	}
@@ -241,14 +245,14 @@ func (m Mapper[T]) MapIfNoError(original *code.If) bool {
 		return true
 	}
 
-	if m.MapBlockNoError(original.Block) {
+	if m.MapBlock(original.Block) {
 		return true
 	}
 
 	return false
 }
 
-func (m Mapper[T]) MapElseIfNoError(original *code.ElseIf) bool {
+func (m Mapper[T]) MapElseIf(original *code.ElseIf) bool {
 	if m.isTargetType(original) {
 		return true
 	}
@@ -257,31 +261,31 @@ func (m Mapper[T]) MapElseIfNoError(original *code.ElseIf) bool {
 		return true
 	}
 
-	if m.MapBlockNoError(original.Block) {
+	if m.MapBlock(original.Block) {
 		return true
 	}
 
 	return false
 }
 
-func (m Mapper[T]) MapElseNoError(original *code.Else) bool {
+func (m Mapper[T]) MapElse(original *code.Else) bool {
 	if m.isTargetType(original) {
 		return true
 	}
 
-	if m.MapBlockNoError(original.Block) {
+	if m.MapBlock(original.Block) {
 		return true
 	}
 
 	return false
 }
 
-func (m Mapper[T]) MapConditionalNoError(original *code.Conditional) bool {
+func (m Mapper[T]) MapConditional(original *code.Conditional) bool {
 	if m.isTargetType(original) {
 		return true
 	}
 
-	if m.MapIfNoError(original.If) {
+	if m.MapIf(original.If) {
 		return true
 	}
 
@@ -289,14 +293,14 @@ func (m Mapper[T]) MapConditionalNoError(original *code.Conditional) bool {
 		return true
 	}
 
-	if original.Else != nil && m.MapElseNoError(original.Else) {
+	if original.Else != nil && m.MapElse(original.Else) {
 		return true
 	}
 
 	return false
 }
 
-func (m Mapper[T]) MapReturnNoError(original *code.Return) bool {
+func (m Mapper[T]) MapReturn(original *code.Return) bool {
 	if m.isTargetType(original) {
 		return true
 	}
@@ -308,7 +312,7 @@ func (m Mapper[T]) MapReturnNoError(original *code.Return) bool {
 	return false
 }
 
-func (m Mapper[T]) MapDeclareNoError(original *code.Declare) bool {
+func (m Mapper[T]) MapDeclare(original *code.Declare) bool {
 	if m.isTargetType(original) {
 		return true
 	}
@@ -320,7 +324,7 @@ func (m Mapper[T]) MapDeclareNoError(original *code.Declare) bool {
 	return false
 }
 
-func (m Mapper[T]) MapModelNoError(original *code.Model) bool {
+func (m Mapper[T]) MapModel(original *code.Model) bool {
 	if m.isTargetType(original) {
 		return true
 	}
@@ -328,7 +332,7 @@ func (m Mapper[T]) MapModelNoError(original *code.Model) bool {
 	return false
 }
 
-func (m Mapper[T]) MapPrimitiveNoError(original code.Primitive) bool {
+func (m Mapper[T]) MapPrimitive(original code.Primitive) bool {
 	if m.isTargetType(original) {
 		return true
 	}
@@ -336,7 +340,7 @@ func (m Mapper[T]) MapPrimitiveNoError(original code.Primitive) bool {
 	return false
 }
 
-func (m Mapper[T]) MapListNoError(original *code.List) bool {
+func (m Mapper[T]) MapList(original *code.List) bool {
 	if m.isTargetType(original) {
 		return true
 	}
@@ -348,7 +352,7 @@ func (m Mapper[T]) MapListNoError(original *code.List) bool {
 	return false
 }
 
-func (m Mapper[T]) MapMapNoError(original *code.Map) bool {
+func (m Mapper[T]) MapMap(original *code.Map) bool {
 	if m.isTargetType(original) {
 		return true
 	}
@@ -364,7 +368,7 @@ func (m Mapper[T]) MapMapNoError(original *code.Map) bool {
 	return false
 }
 
-func (m Mapper[T]) MapCallNoError(original *code.Call) bool {
+func (m Mapper[T]) MapCall(original *code.Call) bool {
 	if m.isTargetType(original) {
 		return true
 	}
@@ -380,7 +384,7 @@ func (m Mapper[T]) MapCallNoError(original *code.Call) bool {
 	return false
 }
 
-func (m Mapper[T]) MapLookupNoError(original *code.Lookup) bool {
+func (m Mapper[T]) MapLookup(original *code.Lookup) bool {
 	if m.isTargetType(original) {
 		return true
 	}
@@ -396,7 +400,7 @@ func (m Mapper[T]) MapLookupNoError(original *code.Lookup) bool {
 	return false
 }
 
-func (m Mapper[T]) MapNewNoError(original *code.New) bool {
+func (m Mapper[T]) MapNew(original *code.New) bool {
 	if m.isTargetType(original) {
 		return true
 	}
@@ -408,7 +412,7 @@ func (m Mapper[T]) MapNewNoError(original *code.New) bool {
 	return false
 }
 
-func (m Mapper[T]) MapForNoError(original *code.For) bool {
+func (m Mapper[T]) MapFor(original *code.For) bool {
 	if m.isTargetType(original) {
 		return true
 	}
@@ -425,14 +429,14 @@ func (m Mapper[T]) MapForNoError(original *code.For) bool {
 		return true
 	}
 
-	if m.MapBlockNoError(original.Block) {
+	if m.MapBlock(original.Block) {
 		return true
 	}
 
 	return false
 }
 
-func (m Mapper[T]) MapForInNoError(original *code.ForIn) bool {
+func (m Mapper[T]) MapForIn(original *code.ForIn) bool {
 	if m.isTargetType(original) {
 		return true
 	}
@@ -441,14 +445,14 @@ func (m Mapper[T]) MapForInNoError(original *code.ForIn) bool {
 		return true
 	}
 
-	if m.MapBlockNoError(original.Block) {
+	if m.MapBlock(original.Block) {
 		return true
 	}
 
 	return false
 }
 
-func (m Mapper[T]) MapBlockNoError(original *code.Block) bool {
+func (m Mapper[T]) MapBlock(original *code.Block) bool {
 	if m.isTargetType(original) {
 		return true
 	}
@@ -460,7 +464,7 @@ func (m Mapper[T]) MapBlockNoError(original *code.Block) bool {
 	return false
 }
 
-func (m Mapper[T]) MapLiteralListNoError(original *code.LiteralList) bool {
+func (m Mapper[T]) MapLiteralList(original *code.LiteralList) bool {
 	if m.isTargetType(original) {
 		return true
 	}
@@ -472,7 +476,7 @@ func (m Mapper[T]) MapLiteralListNoError(original *code.LiteralList) bool {
 	return false
 }
 
-func (m Mapper[T]) MapLengthNoError(original *code.Length) bool {
+func (m Mapper[T]) MapLength(original *code.Length) bool {
 	if m.isTargetType(original) {
 		return true
 	}
@@ -484,7 +488,7 @@ func (m Mapper[T]) MapLengthNoError(original *code.Length) bool {
 	return false
 }
 
-func (m Mapper[T]) MapConstantDefNoError(original *code.ConstantDef) bool {
+func (m Mapper[T]) MapConstantDef(original *code.ConstantDef) bool {
 	if m.isTargetType(original) {
 		return true
 	}
@@ -496,7 +500,7 @@ func (m Mapper[T]) MapConstantDefNoError(original *code.ConstantDef) bool {
 	return false
 }
 
-func (m Mapper[T]) MapKeyValueNoError(original *code.KeyValue) bool {
+func (m Mapper[T]) MapKeyValue(original *code.KeyValue) bool {
 	if m.isTargetType(original) {
 		return true
 	}
@@ -512,12 +516,128 @@ func (m Mapper[T]) MapKeyValueNoError(original *code.KeyValue) bool {
 	return false
 }
 
-func (m Mapper[T]) MapLiteralMapNoError(original *code.LiteralMap) bool {
+func (m Mapper[T]) MapLiteralMap(original *code.LiteralMap) bool {
 	if m.isTargetType(original) {
 		return true
 	}
 
 	if any(code.MapNodesNoError[bool](original.Entries, m)) {
+		return true
+	}
+
+	return false
+}
+
+func (m Mapper[T]) MapLiteralSet(original *code.LiteralSet) bool {
+	if m.isTargetType(original) {
+		return true
+	}
+
+	if any(code.MapNodesNoError[bool](original.Items, m)) {
+		return true
+	}
+
+	return false
+}
+
+func (m Mapper[T]) MapSet(original *code.Set) bool {
+	if m.isTargetType(original) {
+		return true
+	}
+
+	if code.MapNodeNoError[bool](original.Base, m) {
+		return true
+	}
+
+	return false
+}
+
+func (m Mapper[T]) MapEmptyList(original *code.EmptyList) bool {
+	if m.isTargetType(original) {
+		return true
+	}
+
+	if code.MapTypeNoError[bool](original.Type, m) {
+		return true
+	}
+
+	return false
+}
+
+func (m Mapper[T]) MapEmptySet(original *code.EmptySet) bool {
+	if m.isTargetType(original) {
+		return true
+	}
+
+	if code.MapTypeNoError[bool](original.Type, m) {
+		return true
+	}
+
+	return false
+}
+
+func (m Mapper[T]) MapAddToSet(original *code.AddToSet) bool {
+	if m.isTargetType(original) {
+		return true
+	}
+
+	if code.MapValueNoError[bool](original.To, m) {
+		return true
+	}
+
+	if code.MapValueNoError[bool](original.Value, m) {
+		return true
+	}
+
+	return false
+}
+
+func (m Mapper[T]) MapSetContains(original *code.SetContains) bool {
+	if m.isTargetType(original) {
+		return true
+	}
+
+	if code.MapValueNoError[bool](original.Set, m) {
+		return true
+	}
+
+	if code.MapValueNoError[bool](original.Value, m) {
+		return true
+	}
+
+	return false
+}
+
+func (m Mapper[T]) MapPush(original *code.Push) bool {
+	if m.isTargetType(original) {
+		return true
+	}
+
+	if code.MapValueNoError[bool](original.To, m) {
+		return true
+	}
+
+	if code.MapValueNoError[bool](original.Value, m) {
+		return true
+	}
+
+	return false
+}
+
+func (m Mapper[T]) MapPop(original *code.Pop) bool {
+	if m.isTargetType(original) {
+		return true
+	}
+
+	if code.MapValueNoError[bool](original.Value, m) {
+		return true
+	}
+
+	return false
+}
+
+func (m Mapper[T]) MapLiteralBool(original *code.LiteralBool) bool {
+	if m.isTargetType(original) {
 		return true
 	}
 

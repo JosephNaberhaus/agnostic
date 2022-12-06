@@ -30,3 +30,7 @@ const (
 type LengthMetadata struct {
 	LengthType LengthType
 }
+
+type SetContainsMetadata struct{}
+
+type PopMetadata struct{}

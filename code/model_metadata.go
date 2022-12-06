@@ -17,6 +17,7 @@ type ModelDefMetadata struct {
 
 type VariableMetadata struct {
 	Definition Definition
+	IsConstant bool
 	Type       Type
 }
 

@@ -1,76 +1,37 @@
-module DayTwo
+module DaySix
 
-const rock = 0;
-const paper = 1;
-const scissors = 2;
-
-const beats = {
-    rock: scissors,
-    paper: rock,
-    scissors: paper
-};
-
-const losesTo = {
-    rock: paper,
-    paper: scissors,
-    scissors: rock
-};
-
-const theirMoveToMove = {
-    int('A'): rock,
-    int('B'): paper,
-    int('C'): scissors
-};
-
-const myMoveToMove = {
-    'X': rock,
-    'Y': paper,
-    'Z': scissors
-};
-
-int getScore(theirMove: int, myMove: int) {
-    if (beats[myMove] == theirMove) {
-        return 6 + myMove;
-    } else if (beats[theirMove] == myMove) {
-        return myMove;
-    }
-    
-    return 3 + myMove;
-}
-
-int partOne(lines: []string) {
-    var score = 0;
-    for (var line in lines) {
-        var theirMove = theirMoveToMove[int(line[0])];
-        var myMove = myMoveToMove[int(line[2])];
-
-        score = score + getScore(theirMove, myMove);
-    }
-
-    return score;
-}
-
-const lose = 'X';
-const draw = 'Y';
-const win = 'Z';
-
-int partTwo(lines: []string) {
-    var score = 0;
-    for (var line in lines) {
-        var theirMove = theirMoveToMove[int(line[0])];
-        var myGoal = myMoveToMove[int(line[2])];
-
-        var myMove = -1;
-        if (myGoal == win) {
-            myMove = beats[theirMove];
-        } else if (myGoal == lose) {
-            myMove = losesTo[theirMove];
-        } else {
-            myMove = theirMove;
+areLastNCharsUnique(str: string, start: int, n: int): bool {
+    var encountered = make(set<rune>);
+    for (var i = start - (n - 1); i <= start; i += 1) {
+        var cur = str[i];
+        if (encountered.contains(cur)) {
+            return false;
         }
 
-        score = score + getScore(theirMove, myMove);
+        encountered.add(cur);
     }
 
-    return score;
+    return true;
+}
+
+partOne(lines: list<string>): int {
+    var line = lines[0];
+    for (var i = 3; i < line.length; i += 1) {
+        if (areLastNCharsUnique(line, i, 4)) {
+            return i + 1;
+        }
+    }
+
+    return -1;
+}
+
+partTwo(lines: list<string>): int {
+    var line = lines[0];
+    for (var i = 13; i < line.length; i += 1) {
+        if (areLastNCharsUnique(line, i, 14)) {
+            return i + 1;
+        }
+    }
+
+    return -1;
 }

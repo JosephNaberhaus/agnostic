@@ -18,11 +18,19 @@ func (l *LiteralRune) isNode() {}
 
 func (l *LiteralString) isNode() {}
 
+func (l *LiteralBool) isNode() {}
+
 func (l *LiteralList) isNode() {}
 
 func (k *KeyValue) isNode() {}
 
 func (l *LiteralMap) isNode() {}
+
+func (l *LiteralSet) isNode() {}
+
+func (e *EmptyList) isNode() {}
+
+func (e *EmptySet) isNode() {}
 
 func (f *FieldDef) isNode() {}
 
@@ -70,6 +78,10 @@ func (f *For) isNode() {}
 
 func (f *ForIn) isNode() {}
 
+func (a *AddToSet) isNode() {}
+
+func (p *Push) isNode() {}
+
 func (m *Model) isNode() {}
 
 func (p Primitive) isNode() {}
@@ -78,6 +90,8 @@ func (l *List) isNode() {}
 
 func (m *Map) isNode() {}
 
+func (s *Set) isNode() {}
+
 func (c *Call) isNode() {}
 
 func (l *Lookup) isNode() {}
@@ -85,6 +99,10 @@ func (l *Lookup) isNode() {}
 func (n *New) isNode() {}
 
 func (l *Length) isNode() {}
+
+func (s *SetContains) isNode() {}
+
+func (p *Pop) isNode() {}
 
 type NodeMapper[T any] interface {
 	MapFunction(original *Function) (T, error)
@@ -97,11 +115,19 @@ type NodeMapper[T any] interface {
 
 	MapLiteralString(original *LiteralString) (T, error)
 
+	MapLiteralBool(original *LiteralBool) (T, error)
+
 	MapLiteralList(original *LiteralList) (T, error)
 
 	MapKeyValue(original *KeyValue) (T, error)
 
 	MapLiteralMap(original *LiteralMap) (T, error)
+
+	MapLiteralSet(original *LiteralSet) (T, error)
+
+	MapEmptyList(original *EmptyList) (T, error)
+
+	MapEmptySet(original *EmptySet) (T, error)
 
 	MapFieldDef(original *FieldDef) (T, error)
 
@@ -149,6 +175,10 @@ type NodeMapper[T any] interface {
 
 	MapForIn(original *ForIn) (T, error)
 
+	MapAddToSet(original *AddToSet) (T, error)
+
+	MapPush(original *Push) (T, error)
+
 	MapModel(original *Model) (T, error)
 
 	MapPrimitive(original Primitive) (T, error)
@@ -157,6 +187,8 @@ type NodeMapper[T any] interface {
 
 	MapMap(original *Map) (T, error)
 
+	MapSet(original *Set) (T, error)
+
 	MapCall(original *Call) (T, error)
 
 	MapLookup(original *Lookup) (T, error)
@@ -164,6 +196,10 @@ type NodeMapper[T any] interface {
 	MapNew(original *New) (T, error)
 
 	MapLength(original *Length) (T, error)
+
+	MapSetContains(original *SetContains) (T, error)
+
+	MapPop(original *Pop) (T, error)
 }
 
 func MapNode[T any](node Node, mapper NodeMapper[T]) (T, error) {
@@ -184,6 +220,9 @@ func MapNode[T any](node Node, mapper NodeMapper[T]) (T, error) {
 	case *LiteralString:
 		return mapper.MapLiteralString(value)
 
+	case *LiteralBool:
+		return mapper.MapLiteralBool(value)
+
 	case *LiteralList:
 		return mapper.MapLiteralList(value)
 
@@ -192,6 +231,15 @@ func MapNode[T any](node Node, mapper NodeMapper[T]) (T, error) {
 
 	case *LiteralMap:
 		return mapper.MapLiteralMap(value)
+
+	case *LiteralSet:
+		return mapper.MapLiteralSet(value)
+
+	case *EmptyList:
+		return mapper.MapEmptyList(value)
+
+	case *EmptySet:
+		return mapper.MapEmptySet(value)
 
 	case *FieldDef:
 		return mapper.MapFieldDef(value)
@@ -262,6 +310,12 @@ func MapNode[T any](node Node, mapper NodeMapper[T]) (T, error) {
 	case *ForIn:
 		return mapper.MapForIn(value)
 
+	case *AddToSet:
+		return mapper.MapAddToSet(value)
+
+	case *Push:
+		return mapper.MapPush(value)
+
 	case *Model:
 		return mapper.MapModel(value)
 
@@ -274,6 +328,9 @@ func MapNode[T any](node Node, mapper NodeMapper[T]) (T, error) {
 	case *Map:
 		return mapper.MapMap(value)
 
+	case *Set:
+		return mapper.MapSet(value)
+
 	case *Call:
 		return mapper.MapCall(value)
 
@@ -285,6 +342,12 @@ func MapNode[T any](node Node, mapper NodeMapper[T]) (T, error) {
 
 	case *Length:
 		return mapper.MapLength(value)
+
+	case *SetContains:
+		return mapper.MapSetContains(value)
+
+	case *Pop:
+		return mapper.MapPop(value)
 
 	default:
 		panic("unreachable")
@@ -306,204 +369,249 @@ func MapNodes[T any, V Node](nodes []V, mapper NodeMapper[T]) ([]T, error) {
 }
 
 type NodeMapperNoError[T any] interface {
-	MapFunctionNoError(original *Function) T
+	MapFunction(original *Function) T
 
-	MapFunctionPropertyNoError(original *FunctionProperty) T
+	MapFunctionProperty(original *FunctionProperty) T
 
-	MapLiteralIntNoError(original *LiteralInt) T
+	MapLiteralInt(original *LiteralInt) T
 
-	MapLiteralRuneNoError(original *LiteralRune) T
+	MapLiteralRune(original *LiteralRune) T
 
-	MapLiteralStringNoError(original *LiteralString) T
+	MapLiteralString(original *LiteralString) T
 
-	MapLiteralListNoError(original *LiteralList) T
+	MapLiteralBool(original *LiteralBool) T
 
-	MapKeyValueNoError(original *KeyValue) T
+	MapLiteralList(original *LiteralList) T
 
-	MapLiteralMapNoError(original *LiteralMap) T
+	MapKeyValue(original *KeyValue) T
 
-	MapFieldDefNoError(original *FieldDef) T
+	MapLiteralMap(original *LiteralMap) T
 
-	MapArgumentDefNoError(original *ArgumentDef) T
+	MapLiteralSet(original *LiteralSet) T
 
-	MapMethodDefNoError(original *MethodDef) T
+	MapEmptyList(original *EmptyList) T
 
-	MapModelDefNoError(original *ModelDef) T
+	MapEmptySet(original *EmptySet) T
 
-	MapVariableNoError(original *Variable) T
+	MapFieldDef(original *FieldDef) T
 
-	MapPropertyNoError(original *Property) T
+	MapArgumentDef(original *ArgumentDef) T
 
-	MapModuleNoError(original *Module) T
+	MapMethodDef(original *MethodDef) T
 
-	MapConstantDefNoError(original *ConstantDef) T
+	MapModelDef(original *ModelDef) T
 
-	MapFunctionDefNoError(original *FunctionDef) T
+	MapVariable(original *Variable) T
 
-	MapUnaryOperatorNoError(original UnaryOperator) T
+	MapProperty(original *Property) T
 
-	MapUnaryOperationNoError(original *UnaryOperation) T
+	MapModule(original *Module) T
 
-	MapBinaryOperatorNoError(original BinaryOperator) T
+	MapConstantDef(original *ConstantDef) T
 
-	MapBinaryOperationNoError(original *BinaryOperation) T
+	MapFunctionDef(original *FunctionDef) T
 
-	MapBlockNoError(original *Block) T
+	MapUnaryOperator(original UnaryOperator) T
 
-	MapAssignmentNoError(original *Assignment) T
+	MapUnaryOperation(original *UnaryOperation) T
 
-	MapIfNoError(original *If) T
+	MapBinaryOperator(original BinaryOperator) T
 
-	MapElseIfNoError(original *ElseIf) T
+	MapBinaryOperation(original *BinaryOperation) T
 
-	MapElseNoError(original *Else) T
+	MapBlock(original *Block) T
 
-	MapConditionalNoError(original *Conditional) T
+	MapAssignment(original *Assignment) T
 
-	MapReturnNoError(original *Return) T
+	MapIf(original *If) T
 
-	MapDeclareNoError(original *Declare) T
+	MapElseIf(original *ElseIf) T
 
-	MapForNoError(original *For) T
+	MapElse(original *Else) T
 
-	MapForInNoError(original *ForIn) T
+	MapConditional(original *Conditional) T
 
-	MapModelNoError(original *Model) T
+	MapReturn(original *Return) T
 
-	MapPrimitiveNoError(original Primitive) T
+	MapDeclare(original *Declare) T
 
-	MapListNoError(original *List) T
+	MapFor(original *For) T
 
-	MapMapNoError(original *Map) T
+	MapForIn(original *ForIn) T
 
-	MapCallNoError(original *Call) T
+	MapAddToSet(original *AddToSet) T
 
-	MapLookupNoError(original *Lookup) T
+	MapPush(original *Push) T
 
-	MapNewNoError(original *New) T
+	MapModel(original *Model) T
 
-	MapLengthNoError(original *Length) T
+	MapPrimitive(original Primitive) T
+
+	MapList(original *List) T
+
+	MapMap(original *Map) T
+
+	MapSet(original *Set) T
+
+	MapCall(original *Call) T
+
+	MapLookup(original *Lookup) T
+
+	MapNew(original *New) T
+
+	MapLength(original *Length) T
+
+	MapSetContains(original *SetContains) T
+
+	MapPop(original *Pop) T
 }
 
 func MapNodeNoError[T any](node Node, mapper NodeMapperNoError[T]) T {
 	switch value := node.(type) {
 
 	case *Function:
-		return mapper.MapFunctionNoError(value)
+		return mapper.MapFunction(value)
 
 	case *FunctionProperty:
-		return mapper.MapFunctionPropertyNoError(value)
+		return mapper.MapFunctionProperty(value)
 
 	case *LiteralInt:
-		return mapper.MapLiteralIntNoError(value)
+		return mapper.MapLiteralInt(value)
 
 	case *LiteralRune:
-		return mapper.MapLiteralRuneNoError(value)
+		return mapper.MapLiteralRune(value)
 
 	case *LiteralString:
-		return mapper.MapLiteralStringNoError(value)
+		return mapper.MapLiteralString(value)
+
+	case *LiteralBool:
+		return mapper.MapLiteralBool(value)
 
 	case *LiteralList:
-		return mapper.MapLiteralListNoError(value)
+		return mapper.MapLiteralList(value)
 
 	case *KeyValue:
-		return mapper.MapKeyValueNoError(value)
+		return mapper.MapKeyValue(value)
 
 	case *LiteralMap:
-		return mapper.MapLiteralMapNoError(value)
+		return mapper.MapLiteralMap(value)
+
+	case *LiteralSet:
+		return mapper.MapLiteralSet(value)
+
+	case *EmptyList:
+		return mapper.MapEmptyList(value)
+
+	case *EmptySet:
+		return mapper.MapEmptySet(value)
 
 	case *FieldDef:
-		return mapper.MapFieldDefNoError(value)
+		return mapper.MapFieldDef(value)
 
 	case *ArgumentDef:
-		return mapper.MapArgumentDefNoError(value)
+		return mapper.MapArgumentDef(value)
 
 	case *MethodDef:
-		return mapper.MapMethodDefNoError(value)
+		return mapper.MapMethodDef(value)
 
 	case *ModelDef:
-		return mapper.MapModelDefNoError(value)
+		return mapper.MapModelDef(value)
 
 	case *Variable:
-		return mapper.MapVariableNoError(value)
+		return mapper.MapVariable(value)
 
 	case *Property:
-		return mapper.MapPropertyNoError(value)
+		return mapper.MapProperty(value)
 
 	case *Module:
-		return mapper.MapModuleNoError(value)
+		return mapper.MapModule(value)
 
 	case *ConstantDef:
-		return mapper.MapConstantDefNoError(value)
+		return mapper.MapConstantDef(value)
 
 	case *FunctionDef:
-		return mapper.MapFunctionDefNoError(value)
+		return mapper.MapFunctionDef(value)
 
 	case UnaryOperator:
-		return mapper.MapUnaryOperatorNoError(value)
+		return mapper.MapUnaryOperator(value)
 
 	case *UnaryOperation:
-		return mapper.MapUnaryOperationNoError(value)
+		return mapper.MapUnaryOperation(value)
 
 	case BinaryOperator:
-		return mapper.MapBinaryOperatorNoError(value)
+		return mapper.MapBinaryOperator(value)
 
 	case *BinaryOperation:
-		return mapper.MapBinaryOperationNoError(value)
+		return mapper.MapBinaryOperation(value)
 
 	case *Block:
-		return mapper.MapBlockNoError(value)
+		return mapper.MapBlock(value)
 
 	case *Assignment:
-		return mapper.MapAssignmentNoError(value)
+		return mapper.MapAssignment(value)
 
 	case *If:
-		return mapper.MapIfNoError(value)
+		return mapper.MapIf(value)
 
 	case *ElseIf:
-		return mapper.MapElseIfNoError(value)
+		return mapper.MapElseIf(value)
 
 	case *Else:
-		return mapper.MapElseNoError(value)
+		return mapper.MapElse(value)
 
 	case *Conditional:
-		return mapper.MapConditionalNoError(value)
+		return mapper.MapConditional(value)
 
 	case *Return:
-		return mapper.MapReturnNoError(value)
+		return mapper.MapReturn(value)
 
 	case *Declare:
-		return mapper.MapDeclareNoError(value)
+		return mapper.MapDeclare(value)
 
 	case *For:
-		return mapper.MapForNoError(value)
+		return mapper.MapFor(value)
 
 	case *ForIn:
-		return mapper.MapForInNoError(value)
+		return mapper.MapForIn(value)
+
+	case *AddToSet:
+		return mapper.MapAddToSet(value)
+
+	case *Push:
+		return mapper.MapPush(value)
 
 	case *Model:
-		return mapper.MapModelNoError(value)
+		return mapper.MapModel(value)
 
 	case Primitive:
-		return mapper.MapPrimitiveNoError(value)
+		return mapper.MapPrimitive(value)
 
 	case *List:
-		return mapper.MapListNoError(value)
+		return mapper.MapList(value)
 
 	case *Map:
-		return mapper.MapMapNoError(value)
+		return mapper.MapMap(value)
+
+	case *Set:
+		return mapper.MapSet(value)
 
 	case *Call:
-		return mapper.MapCallNoError(value)
+		return mapper.MapCall(value)
 
 	case *Lookup:
-		return mapper.MapLookupNoError(value)
+		return mapper.MapLookup(value)
 
 	case *New:
-		return mapper.MapNewNoError(value)
+		return mapper.MapNew(value)
 
 	case *Length:
-		return mapper.MapLengthNoError(value)
+		return mapper.MapLength(value)
+
+	case *SetContains:
+		return mapper.MapSetContains(value)
+
+	case *Pop:
+		return mapper.MapPop(value)
 
 	default:
 		panic("unreachable")
@@ -554,19 +662,19 @@ func MapCallables[T any](nodes []Callable, mapper CallableMapper[T]) ([]T, error
 }
 
 type CallableMapperNoError[T any] interface {
-	MapFunctionNoError(original *Function) T
+	MapFunction(original *Function) T
 
-	MapFunctionPropertyNoError(original *FunctionProperty) T
+	MapFunctionProperty(original *FunctionProperty) T
 }
 
 func MapCallableNoError[T any](node Callable, mapper CallableMapperNoError[T]) T {
 	switch value := node.(type) {
 
 	case *Function:
-		return mapper.MapFunctionNoError(value)
+		return mapper.MapFunction(value)
 
 	case *FunctionProperty:
-		return mapper.MapFunctionPropertyNoError(value)
+		return mapper.MapFunctionProperty(value)
 
 	default:
 		panic("unreachable")
@@ -589,9 +697,17 @@ type ConstantValueMapper[T any] interface {
 
 	MapLiteralString(original *LiteralString) (T, error)
 
+	MapLiteralBool(original *LiteralBool) (T, error)
+
 	MapLiteralList(original *LiteralList) (T, error)
 
 	MapLiteralMap(original *LiteralMap) (T, error)
+
+	MapLiteralSet(original *LiteralSet) (T, error)
+
+	MapEmptyList(original *EmptyList) (T, error)
+
+	MapEmptySet(original *EmptySet) (T, error)
 }
 
 func MapConstantValue[T any](nodeType ConstantValue, mapper ConstantValueMapper[T]) (T, error) {
@@ -606,11 +722,23 @@ func MapConstantValue[T any](nodeType ConstantValue, mapper ConstantValueMapper[
 	case *LiteralString:
 		return mapper.MapLiteralString(value)
 
+	case *LiteralBool:
+		return mapper.MapLiteralBool(value)
+
 	case *LiteralList:
 		return mapper.MapLiteralList(value)
 
 	case *LiteralMap:
 		return mapper.MapLiteralMap(value)
+
+	case *LiteralSet:
+		return mapper.MapLiteralSet(value)
+
+	case *EmptyList:
+		return mapper.MapEmptyList(value)
+
+	case *EmptySet:
+		return mapper.MapEmptySet(value)
 
 	default:
 		panic("unreachable")
@@ -632,34 +760,54 @@ func MapConstantValues[T any](nodes []ConstantValue, mapper ConstantValueMapper[
 }
 
 type ConstantValueMapperNoError[T any] interface {
-	MapLiteralIntNoError(original *LiteralInt) T
+	MapLiteralInt(original *LiteralInt) T
 
-	MapLiteralRuneNoError(original *LiteralRune) T
+	MapLiteralRune(original *LiteralRune) T
 
-	MapLiteralStringNoError(original *LiteralString) T
+	MapLiteralString(original *LiteralString) T
 
-	MapLiteralListNoError(original *LiteralList) T
+	MapLiteralBool(original *LiteralBool) T
 
-	MapLiteralMapNoError(original *LiteralMap) T
+	MapLiteralList(original *LiteralList) T
+
+	MapLiteralMap(original *LiteralMap) T
+
+	MapLiteralSet(original *LiteralSet) T
+
+	MapEmptyList(original *EmptyList) T
+
+	MapEmptySet(original *EmptySet) T
 }
 
 func MapConstantValueNoError[T any](node ConstantValue, mapper ConstantValueMapperNoError[T]) T {
 	switch value := node.(type) {
 
 	case *LiteralInt:
-		return mapper.MapLiteralIntNoError(value)
+		return mapper.MapLiteralInt(value)
 
 	case *LiteralRune:
-		return mapper.MapLiteralRuneNoError(value)
+		return mapper.MapLiteralRune(value)
 
 	case *LiteralString:
-		return mapper.MapLiteralStringNoError(value)
+		return mapper.MapLiteralString(value)
+
+	case *LiteralBool:
+		return mapper.MapLiteralBool(value)
 
 	case *LiteralList:
-		return mapper.MapLiteralListNoError(value)
+		return mapper.MapLiteralList(value)
 
 	case *LiteralMap:
-		return mapper.MapLiteralMapNoError(value)
+		return mapper.MapLiteralMap(value)
+
+	case *LiteralSet:
+		return mapper.MapLiteralSet(value)
+
+	case *EmptyList:
+		return mapper.MapEmptyList(value)
+
+	case *EmptySet:
+		return mapper.MapEmptySet(value)
 
 	default:
 		panic("unreachable")
@@ -725,34 +873,34 @@ func MapDefinitions[T any](nodes []Definition, mapper DefinitionMapper[T]) ([]T,
 }
 
 type DefinitionMapperNoError[T any] interface {
-	MapFieldDefNoError(original *FieldDef) T
+	MapFieldDef(original *FieldDef) T
 
-	MapArgumentDefNoError(original *ArgumentDef) T
+	MapArgumentDef(original *ArgumentDef) T
 
-	MapConstantDefNoError(original *ConstantDef) T
+	MapConstantDef(original *ConstantDef) T
 
-	MapDeclareNoError(original *Declare) T
+	MapDeclare(original *Declare) T
 
-	MapForInNoError(original *ForIn) T
+	MapForIn(original *ForIn) T
 }
 
 func MapDefinitionNoError[T any](node Definition, mapper DefinitionMapperNoError[T]) T {
 	switch value := node.(type) {
 
 	case *FieldDef:
-		return mapper.MapFieldDefNoError(value)
+		return mapper.MapFieldDef(value)
 
 	case *ArgumentDef:
-		return mapper.MapArgumentDefNoError(value)
+		return mapper.MapArgumentDef(value)
 
 	case *ConstantDef:
-		return mapper.MapConstantDefNoError(value)
+		return mapper.MapConstantDef(value)
 
 	case *Declare:
-		return mapper.MapDeclareNoError(value)
+		return mapper.MapDeclare(value)
 
 	case *ForIn:
-		return mapper.MapForInNoError(value)
+		return mapper.MapForIn(value)
 
 	default:
 		panic("unreachable")
@@ -780,6 +928,14 @@ type StatementMapper[T any] interface {
 	MapFor(original *For) (T, error)
 
 	MapForIn(original *ForIn) (T, error)
+
+	MapAddToSet(original *AddToSet) (T, error)
+
+	MapPush(original *Push) (T, error)
+
+	MapCall(original *Call) (T, error)
+
+	MapPop(original *Pop) (T, error)
 }
 
 func MapStatement[T any](nodeType Statement, mapper StatementMapper[T]) (T, error) {
@@ -803,6 +959,18 @@ func MapStatement[T any](nodeType Statement, mapper StatementMapper[T]) (T, erro
 	case *ForIn:
 		return mapper.MapForIn(value)
 
+	case *AddToSet:
+		return mapper.MapAddToSet(value)
+
+	case *Push:
+		return mapper.MapPush(value)
+
+	case *Call:
+		return mapper.MapCall(value)
+
+	case *Pop:
+		return mapper.MapPop(value)
+
 	default:
 		panic("unreachable")
 	}
@@ -823,39 +991,59 @@ func MapStatements[T any](nodes []Statement, mapper StatementMapper[T]) ([]T, er
 }
 
 type StatementMapperNoError[T any] interface {
-	MapAssignmentNoError(original *Assignment) T
+	MapAssignment(original *Assignment) T
 
-	MapConditionalNoError(original *Conditional) T
+	MapConditional(original *Conditional) T
 
-	MapReturnNoError(original *Return) T
+	MapReturn(original *Return) T
 
-	MapDeclareNoError(original *Declare) T
+	MapDeclare(original *Declare) T
 
-	MapForNoError(original *For) T
+	MapFor(original *For) T
 
-	MapForInNoError(original *ForIn) T
+	MapForIn(original *ForIn) T
+
+	MapAddToSet(original *AddToSet) T
+
+	MapPush(original *Push) T
+
+	MapCall(original *Call) T
+
+	MapPop(original *Pop) T
 }
 
 func MapStatementNoError[T any](node Statement, mapper StatementMapperNoError[T]) T {
 	switch value := node.(type) {
 
 	case *Assignment:
-		return mapper.MapAssignmentNoError(value)
+		return mapper.MapAssignment(value)
 
 	case *Conditional:
-		return mapper.MapConditionalNoError(value)
+		return mapper.MapConditional(value)
 
 	case *Return:
-		return mapper.MapReturnNoError(value)
+		return mapper.MapReturn(value)
 
 	case *Declare:
-		return mapper.MapDeclareNoError(value)
+		return mapper.MapDeclare(value)
 
 	case *For:
-		return mapper.MapForNoError(value)
+		return mapper.MapFor(value)
 
 	case *ForIn:
-		return mapper.MapForInNoError(value)
+		return mapper.MapForIn(value)
+
+	case *AddToSet:
+		return mapper.MapAddToSet(value)
+
+	case *Push:
+		return mapper.MapPush(value)
+
+	case *Call:
+		return mapper.MapCall(value)
+
+	case *Pop:
+		return mapper.MapPop(value)
 
 	default:
 		panic("unreachable")
@@ -879,6 +1067,8 @@ type TypeMapper[T any] interface {
 	MapList(original *List) (T, error)
 
 	MapMap(original *Map) (T, error)
+
+	MapSet(original *Set) (T, error)
 }
 
 func MapType[T any](nodeType Type, mapper TypeMapper[T]) (T, error) {
@@ -895,6 +1085,9 @@ func MapType[T any](nodeType Type, mapper TypeMapper[T]) (T, error) {
 
 	case *Map:
 		return mapper.MapMap(value)
+
+	case *Set:
+		return mapper.MapSet(value)
 
 	default:
 		panic("unreachable")
@@ -916,29 +1109,34 @@ func MapTypes[T any](nodes []Type, mapper TypeMapper[T]) ([]T, error) {
 }
 
 type TypeMapperNoError[T any] interface {
-	MapModelNoError(original *Model) T
+	MapModel(original *Model) T
 
-	MapPrimitiveNoError(original Primitive) T
+	MapPrimitive(original Primitive) T
 
-	MapListNoError(original *List) T
+	MapList(original *List) T
 
-	MapMapNoError(original *Map) T
+	MapMap(original *Map) T
+
+	MapSet(original *Set) T
 }
 
 func MapTypeNoError[T any](node Type, mapper TypeMapperNoError[T]) T {
 	switch value := node.(type) {
 
 	case *Model:
-		return mapper.MapModelNoError(value)
+		return mapper.MapModel(value)
 
 	case Primitive:
-		return mapper.MapPrimitiveNoError(value)
+		return mapper.MapPrimitive(value)
 
 	case *List:
-		return mapper.MapListNoError(value)
+		return mapper.MapList(value)
 
 	case *Map:
-		return mapper.MapMapNoError(value)
+		return mapper.MapMap(value)
+
+	case *Set:
+		return mapper.MapSet(value)
 
 	default:
 		panic("unreachable")
@@ -961,9 +1159,17 @@ type ValueMapper[T any] interface {
 
 	MapLiteralString(original *LiteralString) (T, error)
 
+	MapLiteralBool(original *LiteralBool) (T, error)
+
 	MapLiteralList(original *LiteralList) (T, error)
 
 	MapLiteralMap(original *LiteralMap) (T, error)
+
+	MapLiteralSet(original *LiteralSet) (T, error)
+
+	MapEmptyList(original *EmptyList) (T, error)
+
+	MapEmptySet(original *EmptySet) (T, error)
 
 	MapVariable(original *Variable) (T, error)
 
@@ -980,6 +1186,10 @@ type ValueMapper[T any] interface {
 	MapNew(original *New) (T, error)
 
 	MapLength(original *Length) (T, error)
+
+	MapSetContains(original *SetContains) (T, error)
+
+	MapPop(original *Pop) (T, error)
 }
 
 func MapValue[T any](nodeType Value, mapper ValueMapper[T]) (T, error) {
@@ -994,11 +1204,23 @@ func MapValue[T any](nodeType Value, mapper ValueMapper[T]) (T, error) {
 	case *LiteralString:
 		return mapper.MapLiteralString(value)
 
+	case *LiteralBool:
+		return mapper.MapLiteralBool(value)
+
 	case *LiteralList:
 		return mapper.MapLiteralList(value)
 
 	case *LiteralMap:
 		return mapper.MapLiteralMap(value)
+
+	case *LiteralSet:
+		return mapper.MapLiteralSet(value)
+
+	case *EmptyList:
+		return mapper.MapEmptyList(value)
+
+	case *EmptySet:
+		return mapper.MapEmptySet(value)
 
 	case *Variable:
 		return mapper.MapVariable(value)
@@ -1024,6 +1246,12 @@ func MapValue[T any](nodeType Value, mapper ValueMapper[T]) (T, error) {
 	case *Length:
 		return mapper.MapLength(value)
 
+	case *SetContains:
+		return mapper.MapSetContains(value)
+
+	case *Pop:
+		return mapper.MapPop(value)
+
 	default:
 		panic("unreachable")
 	}
@@ -1044,74 +1272,104 @@ func MapValues[T any](nodes []Value, mapper ValueMapper[T]) ([]T, error) {
 }
 
 type ValueMapperNoError[T any] interface {
-	MapLiteralIntNoError(original *LiteralInt) T
+	MapLiteralInt(original *LiteralInt) T
 
-	MapLiteralRuneNoError(original *LiteralRune) T
+	MapLiteralRune(original *LiteralRune) T
 
-	MapLiteralStringNoError(original *LiteralString) T
+	MapLiteralString(original *LiteralString) T
 
-	MapLiteralListNoError(original *LiteralList) T
+	MapLiteralBool(original *LiteralBool) T
 
-	MapLiteralMapNoError(original *LiteralMap) T
+	MapLiteralList(original *LiteralList) T
 
-	MapVariableNoError(original *Variable) T
+	MapLiteralMap(original *LiteralMap) T
 
-	MapPropertyNoError(original *Property) T
+	MapLiteralSet(original *LiteralSet) T
 
-	MapUnaryOperationNoError(original *UnaryOperation) T
+	MapEmptyList(original *EmptyList) T
 
-	MapBinaryOperationNoError(original *BinaryOperation) T
+	MapEmptySet(original *EmptySet) T
 
-	MapCallNoError(original *Call) T
+	MapVariable(original *Variable) T
 
-	MapLookupNoError(original *Lookup) T
+	MapProperty(original *Property) T
 
-	MapNewNoError(original *New) T
+	MapUnaryOperation(original *UnaryOperation) T
 
-	MapLengthNoError(original *Length) T
+	MapBinaryOperation(original *BinaryOperation) T
+
+	MapCall(original *Call) T
+
+	MapLookup(original *Lookup) T
+
+	MapNew(original *New) T
+
+	MapLength(original *Length) T
+
+	MapSetContains(original *SetContains) T
+
+	MapPop(original *Pop) T
 }
 
 func MapValueNoError[T any](node Value, mapper ValueMapperNoError[T]) T {
 	switch value := node.(type) {
 
 	case *LiteralInt:
-		return mapper.MapLiteralIntNoError(value)
+		return mapper.MapLiteralInt(value)
 
 	case *LiteralRune:
-		return mapper.MapLiteralRuneNoError(value)
+		return mapper.MapLiteralRune(value)
 
 	case *LiteralString:
-		return mapper.MapLiteralStringNoError(value)
+		return mapper.MapLiteralString(value)
+
+	case *LiteralBool:
+		return mapper.MapLiteralBool(value)
 
 	case *LiteralList:
-		return mapper.MapLiteralListNoError(value)
+		return mapper.MapLiteralList(value)
 
 	case *LiteralMap:
-		return mapper.MapLiteralMapNoError(value)
+		return mapper.MapLiteralMap(value)
+
+	case *LiteralSet:
+		return mapper.MapLiteralSet(value)
+
+	case *EmptyList:
+		return mapper.MapEmptyList(value)
+
+	case *EmptySet:
+		return mapper.MapEmptySet(value)
 
 	case *Variable:
-		return mapper.MapVariableNoError(value)
+		return mapper.MapVariable(value)
 
 	case *Property:
-		return mapper.MapPropertyNoError(value)
+		return mapper.MapProperty(value)
 
 	case *UnaryOperation:
-		return mapper.MapUnaryOperationNoError(value)
+		return mapper.MapUnaryOperation(value)
 
 	case *BinaryOperation:
-		return mapper.MapBinaryOperationNoError(value)
+		return mapper.MapBinaryOperation(value)
 
 	case *Call:
-		return mapper.MapCallNoError(value)
+		return mapper.MapCall(value)
 
 	case *Lookup:
-		return mapper.MapLookupNoError(value)
+		return mapper.MapLookup(value)
 
 	case *New:
-		return mapper.MapNewNoError(value)
+		return mapper.MapNew(value)
 
 	case *Length:
-		return mapper.MapLengthNoError(value)
+		return mapper.MapLength(value)
+
+	case *SetContains:
+		return mapper.MapSetContains(value)
+
+	case *Pop:
+		return mapper.MapPop(value)
 
 	default:
 		panic("unreachable")

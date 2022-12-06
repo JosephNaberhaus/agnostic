@@ -45,7 +45,7 @@ func MapNodes[T any, V Node](nodes []V, mapper NodeMapper[T]) ([]T, error) {
 
 type NodeMapperNoError[T any] interface {
 {{ range $node := $.Nodes }}
-    Map{{ $node.Name }}NoError(original {{ if and $.UsePointersForStructs $node.IsStruct }}*{{ end }}{{ $node.Name }}) T
+    Map{{ $node.Name }}(original {{ if and $.UsePointersForStructs $node.IsStruct }}*{{ end }}{{ $node.Name }}) T
 {{ end }}
 }
 
@@ -53,7 +53,7 @@ func MapNodeNoError[T any](node Node, mapper NodeMapperNoError[T]) T {
     switch value := node.(type) {
     {{ range $node := $.Nodes }}
     case {{ if and $.UsePointersForStructs $node.IsStruct }}*{{ end }}{{ $node.Name }}:
-        return mapper.Map{{ $node.Name }}NoError(value)
+        return mapper.Map{{ $node.Name }}(value)
     {{ end }}
     default:
         panic("unreachable")
@@ -103,7 +103,7 @@ func Map{{ $nodeType.Name }}s[T any](nodes []{{ $nodeType.Name }}, mapper {{ $no
 
 type {{ $nodeType.Name }}MapperNoError[T any] interface {
 {{ range $implementation := $implementations }}
-    Map{{ RemovePointer $implementation }}NoError(original {{ $implementation }}) T
+    Map{{ RemovePointer $implementation }}(original {{ $implementation }}) T
 {{ end }}
 }
 
@@ -111,7 +111,7 @@ func Map{{ $nodeType.Name }}NoError[T any](node {{ $nodeType.Name }}, mapper {{ 
     switch value := node.(type) {
     {{ range $implementation := $implementations }}
     case {{ $implementation }}:
-        return mapper.Map{{ RemovePointer $implementation }}NoError(value)
+        return mapper.Map{{ RemovePointer $implementation }}(value)
     {{ end }}
     default:
         panic("unreachable")

@@ -34,3 +34,10 @@ type Map struct {
 }
 
 func (m *Map) isType()	{}
+
+type Set struct {
+	Base	Type
+	SetMetadata
+}
+
+func (s *Set) isType()	{}

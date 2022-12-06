@@ -78,3 +78,19 @@ type ForIn struct {
 func (f *ForIn) isStatement()	{}
 
 func (f *ForIn) isDefinition()	{}
+
+type AddToSet struct {
+	To	Value
+	Value	Value
+	AddToSetMetadata
+}
+
+func (a *AddToSet) isStatement()	{}
+
+type Push struct {
+	To	Value
+	Value	Value
+	PushMetadata
+}
+
+func (p *Push) isStatement()	{}

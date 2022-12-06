@@ -37,3 +37,11 @@ type Map struct {
 }
 
 func (m Map) isType() {}
+
+// Set
+
+type Set struct {
+	Base Type
+}
+
+func (s Set) isType() {}

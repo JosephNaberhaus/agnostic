@@ -72,7 +72,8 @@ var unaryOperatorMappings = map[code.Primitive]map[code.UnaryOperator]code.Primi
 		code.Negate: code.Int,
 	},
 	code.Rune: {
-		code.CastToInt: code.Int,
+		code.CastToInt:    code.Int,
+		code.CastToString: code.String,
 	},
 }
 
@@ -80,30 +81,39 @@ var unaryOperatorMappings = map[code.Primitive]map[code.UnaryOperator]code.Primi
 // and the output primitive that they produce.
 var binaryOperatorMappings = map[binaryOperatorPair]map[code.BinaryOperator]code.Primitive{
 	{left: code.Int, right: code.Int}: {
-		code.Equals:      code.Boolean,
-		code.LessThan:    code.Boolean,
-		code.GreaterThan: code.Boolean,
-		code.Multiply:    code.Int,
-		code.Divide:      code.Int,
-		code.Add:         code.Int,
-		code.Subtract:    code.Int,
+		code.Equal:                code.Boolean,
+		code.NotEqual:             code.Boolean,
+		code.LessThan:             code.Boolean,
+		code.LessThanOrEqualTo:    code.Boolean,
+		code.GreaterThan:          code.Boolean,
+		code.GreaterThanOrEqualTo: code.Boolean,
+		code.Multiply:             code.Int,
+		code.Divide:               code.Int,
+		code.Add:                  code.Int,
+		code.Subtract:             code.Int,
 	},
 	{left: code.Rune, right: code.Rune}: {
-		code.Equals:      code.Boolean,
-		code.LessThan:    code.Boolean,
-		code.GreaterThan: code.Boolean,
-		code.Multiply:    code.Rune,
-		code.Divide:      code.Rune,
-		code.Add:         code.Rune,
-		code.Subtract:    code.Rune,
+		code.Equal:                code.Boolean,
+		code.NotEqual:             code.Boolean,
+		code.LessThan:             code.Boolean,
+		code.LessThanOrEqualTo:    code.Boolean,
+		code.GreaterThan:          code.Boolean,
+		code.GreaterThanOrEqualTo: code.Boolean,
+		code.Multiply:             code.Rune,
+		code.Divide:               code.Rune,
+		code.Add:                  code.Rune,
+		code.Subtract:             code.Rune,
 	},
 	{left: code.String, right: code.String}: {
-		code.Equals: code.Boolean,
-		code.Add:    code.String,
+		code.Equal:    code.Boolean,
+		code.NotEqual: code.Boolean,
+		code.Add:      code.String,
 	},
 	{left: code.Boolean, right: code.Boolean}: {
-		code.And: code.Boolean,
-		code.Or:  code.Boolean,
+		code.Equal:    code.Boolean,
+		code.NotEqual: code.Boolean,
+		code.And:      code.Boolean,
+		code.Or:       code.Boolean,
 	},
 }
 
@@ -160,7 +170,12 @@ func (m Mapper) MapProperty(original *code.Property) (code.Type, error) {
 		return nil, err
 	}
 
-	return code.MapDefinitionNoError[code.Type](ofModel.ModelMetadata.Definition.FieldMap[original.Name], definition_to_type.Mapper{}), nil
+	field, ok := ofModel.ModelMetadata.Definition.FieldMap[original.Name]
+	if !ok {
+		return nil, errors.New("unknown field " + original.Name)
+	}
+
+	return code.MapDefinitionNoError[code.Type](field, definition_to_type.Mapper{}), nil
 }
 
 func (m Mapper) MapVariable(original *code.Variable) (code.Type, error) {
@@ -260,4 +275,58 @@ func (m Mapper) MapLiteralMap(original *code.LiteralMap) (code.Type, error) {
 		Key:   firstEntryKeyType,
 		Value: firstEntryValueType,
 	}, nil
+}
+
+func (m Mapper) MapLiteralSet(original *code.LiteralSet) (code.Type, error) {
+	if len(original.Items) == 0 {
+		return nil, errors.New("literal set must have at least one element")
+	}
+
+	firstElementType, err := code.MapValue[code.Type](original.Items[0], m)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, item := range original.Items[1:] {
+		elementType, err := code.MapValue[code.Type](item, m)
+		if err != nil {
+			return nil, err
+		}
+
+		if elementType != firstElementType {
+			return nil, errors.New("literal set must have elements of the same type")
+		}
+	}
+
+	return &code.List{Base: firstElementType}, nil
+}
+
+func (m Mapper) MapEmptyList(original *code.EmptyList) (code.Type, error) {
+	return &code.List{Base: original.Type}, nil
+}
+
+func (m Mapper) MapEmptySet(original *code.EmptySet) (code.Type, error) {
+	return &code.Set{Base: original.Type}, nil
+}
+
+func (m Mapper) MapSetContains(original *code.SetContains) (code.Type, error) {
+	return code.Boolean, nil
+}
+
+func (m Mapper) MapPop(original *code.Pop) (code.Type, error) {
+	valueType, err := code.MapValue[code.Type](original.Value, m)
+	if err != nil {
+		return nil, err
+	}
+
+	switch valueType := valueType.(type) {
+	case *code.List:
+		return valueType.Base, nil
+	default:
+		return nil, errors.New("pop can only be used on a list")
+	}
+}
+
+func (m Mapper) MapLiteralBool(original *code.LiteralBool) (code.Type, error) {
+	return code.Boolean, nil
 }

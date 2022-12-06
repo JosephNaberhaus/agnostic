@@ -29,6 +29,15 @@ func (l *LiteralString) isValue()	{}
 
 func (l *LiteralString) isConstantValue()	{}
 
+type LiteralBool struct {
+	Value	bool
+	LiteralBoolMetadata
+}
+
+func (l *LiteralBool) isValue()	{}
+
+func (l *LiteralBool) isConstantValue()	{}
+
 type LiteralList struct {
 	Items	[]Value
 	LiteralListMetadata
@@ -51,3 +60,30 @@ type LiteralMap struct {
 func (l *LiteralMap) isValue()	{}
 
 func (l *LiteralMap) isConstantValue()	{}
+
+type LiteralSet struct {
+	Items	[]Value
+	LiteralSetMetadata
+}
+
+func (l *LiteralSet) isValue()	{}
+
+func (l *LiteralSet) isConstantValue()	{}
+
+type EmptyList struct {
+	Type	Type
+	EmptyListMetadata
+}
+
+func (e *EmptyList) isValue()	{}
+
+func (e *EmptyList) isConstantValue()	{}
+
+type EmptySet struct {
+	Type	Type
+	EmptySetMetadata
+}
+
+func (e *EmptySet) isValue()	{}
+
+func (e *EmptySet) isConstantValue()	{}

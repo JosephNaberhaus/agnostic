@@ -7,6 +7,7 @@ func typeConsumer() consumer[ast.Type] {
 		castToType(primitiveConsumer()),
 		castToType(listConsumer()),
 		castToType(mapConsumer()),
+		castToType(setConsumer()),
 		castToType(modelConsumer()),
 	)
 }
@@ -15,6 +16,7 @@ func primitiveConsumer() consumer[ast.Primitive] {
 	return first(
 		mapResultToConstant(stringConsumer("bool"), ast.Boolean),
 		mapResultToConstant(stringConsumer("int"), ast.Int),
+		mapResultToConstant(stringConsumer("rune"), ast.Rune),
 		mapResultToConstant(stringConsumer("string"), ast.String),
 		mapResultToConstant(stringConsumer("void"), ast.Void),
 	)
@@ -36,13 +38,14 @@ func listConsumer() consumer[ast.List] {
 	return attempt(
 		&result,
 		inOrder(
-			skip(stringConsumer("[]")),
+			skip(stringConsumer("list<")),
 			handleNoError(
 				deferred(typeConsumer),
 				func(base ast.Type) {
 					result.Base = base
 				},
 			),
+			skip(stringConsumer(">")),
 		),
 	)
 }
@@ -53,6 +56,7 @@ func mapConsumer() consumer[ast.Map] {
 		&result,
 		inOrder(
 			skip(stringConsumer("map<")),
+			anyWhitespaceConsumer(),
 			handleNoError(
 				deferred(typeConsumer),
 				func(key ast.Type) {
@@ -66,6 +70,25 @@ func mapConsumer() consumer[ast.Map] {
 				deferred(typeConsumer),
 				func(value ast.Type) {
 					result.Value = value
+				},
+			),
+			anyWhitespaceConsumer(),
+			skip(stringConsumer(">")),
+		),
+	)
+}
+
+func setConsumer() consumer[ast.Set] {
+	var result ast.Set
+	return attempt(
+		&result,
+		inOrder(
+			skip(stringConsumer("set<")),
+			anyWhitespaceConsumer(),
+			handleNoError(
+				deferred(typeConsumer),
+				func(base ast.Type) {
+					result.Base = base
 				},
 			),
 			anyWhitespaceConsumer(),

@@ -8,6 +8,7 @@ const (
 	Not	UnaryOperator	= iota + 1
 	Negate
 	CastToInt
+	CastToString
 )
 
 type UnaryOperation struct {
@@ -25,9 +26,12 @@ const (
 	Subtract
 	Multiply
 	Divide
-	Equals
+	Equal
+	NotEqual
 	LessThan
+	LessThanOrEqualTo
 	GreaterThan
+	GreaterThanOrEqualTo
 	Or
 	And
 )

@@ -227,12 +227,14 @@ func (a *astToCodeMapper) MapModule(original ast.Module) (code.Node, error) {
 		value.ConstantsMap[constant.Name] = constant
 	}
 
+	value.ModelMap = map[string]*code.ModelDef{}
 	for _, originalModel := range original.Models {
 		model, err := mapAstNodeTo[*code.ModelDef](originalModel, a)
 		if err != nil {
 			return nil, err
 		}
 		value.Models = append(value.Models, model)
+		value.ModelMap[model.Name] = model
 	}
 
 	value.FunctionMap = map[string]*code.FunctionDef{}
@@ -348,14 +350,9 @@ func (a *astToCodeMapper) MapModel(original ast.Model) (code.Node, error) {
 		return nil, errors.New("no module")
 	}
 
-	for _, model := range module.Models {
-		if model.Name == original.Name {
-			value.Definition = model
-		}
-	}
-	if value.Definition == nil {
-		// TODO improve
-		return nil, errors.New("no definition found")
+	value.Definition, ok = module.ModelMap[value.Name]
+	if !ok {
+		return nil, errors.New("no definition found for " + value.Name)
 	}
 
 	return value, nil
@@ -496,6 +493,8 @@ func (a *astToCodeMapper) MapVariable(original ast.Variable) (code.Node, error) 
 		return nil, err
 	}
 
+	_, value.IsConstant = value.Definition.(*code.ConstantDef)
+
 	value.Type, err = code.MapValue[code.Type](value, value_to_type.Mapper{})
 	if err != nil {
 		return nil, err
@@ -606,22 +605,20 @@ func (a *astToCodeMapper) MapFunctionDef(original ast.FunctionDef) (code.Node, e
 	}
 	value.Name = original.Name
 
-	for _, originalArguments := range original.Arguments {
-		argument, err := mapAstNodeTo[*code.ArgumentDef](originalArguments, a)
-		if err != nil {
-			return nil, err
-		}
-		value.Arguments = append(value.Arguments, argument)
-	}
-
-	value.ReturnType, err = mapAstNodeTo[code.Type](original.ReturnType, a)
-	if err != nil {
-		return nil, err
-	}
-
-	_, value.IsMethod = code.FirstOfType[*code.MethodDef](a.stack)
-
 	a.queueDefer(func() error {
+		for _, originalArguments := range original.Arguments {
+			argument, err := mapAstNodeTo[*code.ArgumentDef](originalArguments, a)
+			if err != nil {
+				return err
+			}
+			value.Arguments = append(value.Arguments, argument)
+		}
+
+		value.ReturnType, err = mapAstNodeTo[code.Type](original.ReturnType, a)
+		if err != nil {
+			return err
+		}
+
 		value.Block, err = mapAstNodeTo[*code.Block](original.Block, a)
 		if err != nil {
 			return err
@@ -634,6 +631,8 @@ func (a *astToCodeMapper) MapFunctionDef(original ast.FunctionDef) (code.Node, e
 
 		return nil
 	})
+
+	_, value.IsMethod = code.FirstOfType[*code.MethodDef](a.stack)
 
 	return value, nil
 }
@@ -666,6 +665,62 @@ func (a *astToCodeMapper) MapCall(original ast.Call) (code.Node, error) {
 	value := new(code.Call)
 	a.stack.Push(value)
 	defer a.stack.Pop()
+
+	// Check whether the call is to one of the built-in functions.
+	if functionProperty, ok := original.Function.(ast.FunctionProperty); ok {
+		functionPropertyOf, err := mapAstNodeTo[code.Value](functionProperty.Of, a)
+		if err != nil {
+			return nil, err
+		}
+
+		functionPropertyOfType, err := code.MapValue[code.Type](functionPropertyOf, value_to_type.Mapper{})
+		if err != nil {
+			return nil, err
+		}
+
+		if _, isSet := functionPropertyOfType.(*code.Set); isSet {
+			switch functionProperty.Name {
+			case "add":
+				if len(original.Arguments) != 1 {
+					return nil, errors.New("set add requires one argument")
+				}
+
+				return a.MapAddToSet(ast.AddToSet{
+					To:    functionProperty.Of,
+					Value: original.Arguments[0],
+				})
+			case "contains":
+				if len(original.Arguments) != 1 {
+					return nil, errors.New("set contains requires one argument")
+				}
+
+				return a.MapSetContains(ast.SetContains{
+					Set:   functionProperty.Of,
+					Value: original.Arguments[0],
+				})
+			}
+		} else if _, isList := functionPropertyOfType.(*code.List); isList {
+			switch functionProperty.Name {
+			case "push":
+				if len(original.Arguments) != 1 {
+					return nil, errors.New("list push requires one argument")
+				}
+
+				return a.MapPush(ast.Push{
+					To:    functionProperty.Of,
+					Value: original.Arguments[0],
+				})
+			case "pop":
+				if len(original.Arguments) != 0 {
+					return nil, errors.New("list pop requires no arguments")
+				}
+
+				return a.MapPop(ast.Pop{
+					Value: functionProperty.Of,
+				})
+			}
+		}
+	}
 
 	var err error
 	value.Function, err = mapAstNodeTo[code.Callable](original.Function, a)
@@ -810,11 +865,16 @@ func (a *astToCodeMapper) MapForIn(original ast.ForIn) (code.Node, error) {
 		return nil, err
 	}
 
-	iterableTypeAsList, ok := iterableType.(*code.List)
-	if !ok {
-		return nil, errors.New("for-in can only be used with an iterable type")
+	switch iterableType := iterableType.(type) {
+	case *code.List:
+		value.ForInType = code.ForInTypeList
+		value.ItemType = iterableType.Base
+	case *code.Set:
+		value.ForInType = code.ForInTypeSet
+		value.ItemType = iterableType.Base
+	default:
+		return nil, errors.New("for-in can only be used with a list or set")
 	}
-	value.ItemType = iterableTypeAsList.Base
 
 	value.StatementMetadata, err = a.getStatementMetadata()
 	if err != nil {
@@ -907,6 +967,12 @@ func (a *astToCodeMapper) MapConstantDef(original ast.ConstantDef) (code.Node, e
 		return nil, err
 	}
 
+	var ok bool
+	value.Parent, ok = code.FirstOfType[*code.Module](a.stack)
+	if !ok {
+		return nil, errors.New("expected module to be parent of constant")
+	}
+
 	value.Type, err = code.MapConstantValue[code.Type](value.Value, value_to_type.Mapper{})
 	if err != nil {
 		return nil, err
@@ -944,6 +1010,148 @@ func (a *astToCodeMapper) MapLiteralMap(original ast.LiteralMap) (code.Node, err
 	if err != nil {
 		return nil, err
 	}
+
+	return value, nil
+}
+
+func (a *astToCodeMapper) MapLiteralSet(original ast.LiteralSet) (code.Node, error) {
+	value := new(code.LiteralSet)
+	a.stack.Push(value)
+	defer a.stack.Pop()
+
+	var err error
+	value.Items, err = mapAstNodesTo[code.Value](original.Items, a)
+	if err != nil {
+		return nil, err
+	}
+
+	return value, nil
+}
+
+func (a *astToCodeMapper) MapSet(original ast.Set) (code.Node, error) {
+	value := new(code.Set)
+	a.stack.Push(value)
+	defer a.stack.Pop()
+
+	var err error
+	value.Base, err = mapAstNodeTo[code.Type](original.Base, a)
+	if err != nil {
+		return nil, err
+	}
+
+	return value, nil
+}
+
+func (a *astToCodeMapper) MapEmptyList(original ast.EmptyList) (code.Node, error) {
+	value := new(code.EmptyList)
+	a.stack.Push(value)
+	defer a.stack.Pop()
+
+	var err error
+	value.Type, err = mapAstNodeTo[code.Type](original.Type, a)
+	if err != nil {
+		return nil, err
+	}
+
+	return value, nil
+}
+
+func (a *astToCodeMapper) MapEmptySet(original ast.EmptySet) (code.Node, error) {
+	value := new(code.EmptySet)
+	a.stack.Push(value)
+	defer a.stack.Pop()
+
+	var err error
+	value.Type, err = mapAstNodeTo[code.Type](original.Type, a)
+	if err != nil {
+		return nil, err
+	}
+
+	return value, nil
+}
+
+func (a *astToCodeMapper) MapAddToSet(original ast.AddToSet) (code.Node, error) {
+	value := new(code.AddToSet)
+	a.stack.Push(value)
+	defer a.stack.Pop()
+
+	var err error
+	value.To, err = mapAstNodeTo[code.Value](original.To, a)
+	if err != nil {
+		return nil, err
+	}
+
+	value.Value, err = mapAstNodeTo[code.Value](original.Value, a)
+	if err != nil {
+		return nil, err
+	}
+
+	value.StatementMetadata, err = a.getStatementMetadata()
+	if err != nil {
+		return nil, err
+	}
+
+	return value, nil
+}
+
+func (a *astToCodeMapper) MapSetContains(original ast.SetContains) (code.Node, error) {
+	value := new(code.SetContains)
+	a.stack.Push(value)
+	defer a.stack.Pop()
+
+	var err error
+	value.Set, err = mapAstNodeTo[code.Value](original.Set, a)
+	if err != nil {
+		return nil, err
+	}
+
+	value.Value, err = mapAstNodeTo[code.Value](original.Value, a)
+	if err != nil {
+		return nil, err
+	}
+
+	return value, nil
+}
+
+func (a *astToCodeMapper) MapPush(original ast.Push) (code.Node, error) {
+	value := new(code.Push)
+	a.stack.Push(value)
+	defer a.stack.Pop()
+
+	var err error
+	value.To, err = mapAstNodeTo[code.Value](original.To, a)
+	if err != nil {
+		return nil, err
+	}
+
+	value.Value, err = mapAstNodeTo[code.Value](original.Value, a)
+	if err != nil {
+		return nil, err
+	}
+
+	return value, nil
+}
+
+func (a *astToCodeMapper) MapPop(original ast.Pop) (code.Node, error) {
+	value := new(code.Pop)
+	a.stack.Push(value)
+	defer a.stack.Pop()
+
+	var err error
+	value.Value, err = mapAstNodeTo[code.Value](original.Value, a)
+	if err != nil {
+		return nil, err
+	}
+
+	return value, nil
+}
+
+func (a *astToCodeMapper) MapLiteralBool(original ast.LiteralBool) (code.Node, error) {
+	value := new(code.LiteralBool)
+	a.stack.Push(value)
+	defer a.stack.Pop()
+
+	value.Value = original.Value
 
 	return value, nil
 }

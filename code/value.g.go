@@ -10,6 +10,8 @@ type Call struct {
 
 func (c *Call) isValue()	{}
 
+func (c *Call) isStatement()	{}
+
 type Lookup struct {
 	From, Key	Value
 	LookupMetadata
@@ -30,3 +32,20 @@ type Length struct {
 }
 
 func (l *Length) isValue()	{}
+
+type SetContains struct {
+	Set	Value
+	Value	Value
+	SetContainsMetadata
+}
+
+func (s *SetContains) isValue()	{}
+
+type Pop struct {
+	Value	Value
+	PopMetadata
+}
+
+func (p *Pop) isValue()	{}
+
+func (p *Pop) isStatement()	{}

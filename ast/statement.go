@@ -80,3 +80,22 @@ type ForIn struct {
 func (f ForIn) isStatement() {}
 
 func (f ForIn) isDefinition() {}
+
+// AddToSet
+
+// TODO this should probably be a value that returns void
+type AddToSet struct {
+	To    Value
+	Value Value
+}
+
+func (a AddToSet) isStatement() {}
+
+// Push
+
+type Push struct {
+	To    Value
+	Value Value
+}
+
+func (p Push) isStatement() {}

@@ -22,10 +22,7 @@ func Map(module ast.Module, mapper implementation.Mapper) (string, error) {
 func mapCode(codeModule *code.Module, mapper implementation.Mapper) (string, error) {
 	config := mapper.Config()
 
-	output, err := mapper.MapModule(codeModule)
-	if err != nil {
-		return "", err
-	}
+	output := mapper.MapModule(codeModule)
 
 	return output.String(text.Config{Indent: config.Indent}), nil
 }

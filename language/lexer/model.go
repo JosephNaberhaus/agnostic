@@ -96,13 +96,6 @@ func functionDefConsumer() consumer[ast.FunctionDef] {
 		inOrder(
 			anyWhitespaceConsumer(),
 			handleNoError(
-				typeConsumer(),
-				func(returnType ast.Type) {
-					result.ReturnType = returnType
-				},
-			),
-			allWhitespaceConsumer(),
-			handleNoError(
 				alphaConsumer(),
 				func(name string) {
 					result.Name = name
@@ -117,6 +110,15 @@ func functionDefConsumer() consumer[ast.FunctionDef] {
 				},
 			),
 			skip(stringConsumer(")")),
+			anyWhitespaceConsumer(),
+			skip(stringConsumer(":")),
+			anyWhitespaceConsumer(),
+			handleNoError(
+				typeConsumer(),
+				func(returnType ast.Type) {
+					result.ReturnType = returnType
+				},
+			),
 			anyWhitespaceConsumer(),
 			skip(stringConsumer("{")),
 			emptyLineConsumer(),

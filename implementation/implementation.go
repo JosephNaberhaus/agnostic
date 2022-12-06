@@ -13,5 +13,5 @@ type Config struct {
 
 type Mapper interface {
 	Config() Config
-	code.NodeMapper[text.Node]
+	code.NodeMapperNoError[text.Node]
 }

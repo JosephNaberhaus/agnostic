@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/JosephNaberhaus/agnostic/code"
 	"github.com/JosephNaberhaus/agnostic/code/mappers/value_to_type"
+	"reflect"
 	"regexp"
 	"strings"
 )
@@ -78,7 +79,7 @@ func validateReturn(ret *code.Return) error {
 		return err
 	}
 
-	if valueType != ret.StatementMetadata.Parent.ReturnType {
+	if !reflect.DeepEqual(valueType, ret.StatementMetadata.Parent.ReturnType) {
 		return errors.New("mismatched return types")
 	}
 
