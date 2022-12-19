@@ -59,10 +59,6 @@ func (f *findDefinitionMapper) MapArgumentDef(original *code.ArgumentDef) (code.
 	return nil, nil
 }
 
-func (f *findDefinitionMapper) MapMethodDef(original *code.MethodDef) (code.Definition, error) {
-	return f.MapFunctionDef(original.Function)
-}
-
 func (f *findDefinitionMapper) MapModelDef(original *code.ModelDef) (code.Definition, error) {
 	return findDefinitionInNodes(original.Fields, f)
 }
@@ -168,11 +164,11 @@ func (f *findDefinitionMapper) MapDeclare(original *code.Declare) (code.Definiti
 }
 
 func (f *findDefinitionMapper) MapFor(original *code.For) (code.Definition, error) {
-	if original.Initialization == nil {
-		return nil, nil
+	if original.Initialization.IsSet() {
+		return code.MapStatement[code.Definition](original.Initialization.Value(), f)
 	}
 
-	return code.MapStatement[code.Definition](original.Initialization, f)
+	return nil, nil
 }
 
 func (f *findDefinitionMapper) MapForIn(original *code.ForIn) (code.Definition, error) {
@@ -244,6 +240,50 @@ func (f *findDefinitionMapper) MapPop(original *code.Pop) (code.Definition, erro
 }
 
 func (f *findDefinitionMapper) MapLiteralBool(original *code.LiteralBool) (code.Definition, error) {
+	return nil, nil
+}
+
+func (f *findDefinitionMapper) MapNull(original *code.Null) (code.Definition, error) {
+	return nil, nil
+}
+
+func (f *findDefinitionMapper) MapSelf(original *code.Self) (code.Definition, error) {
+	return nil, nil
+}
+
+func (f *findDefinitionMapper) MapDeclareNull(original *code.DeclareNull) (code.Definition, error) {
+	if original.Name == f.targetName {
+		return original, nil
+	}
+
+	return nil, nil
+}
+
+func (f *findDefinitionMapper) MapBreak(original *code.Break) (code.Definition, error) {
+	return nil, nil
+}
+
+func (f *findDefinitionMapper) MapContinue(original *code.Continue) (code.Definition, error) {
+	return nil, nil
+}
+
+func (f *findDefinitionMapper) MapEqualOverride(original *code.EqualOverride) (code.Definition, error) {
+	if original.OtherName == f.targetName {
+		return original, nil
+	}
+
+	return nil, nil
+}
+
+func (f *findDefinitionMapper) MapHashOverride(_ *code.HashOverride) (code.Definition, error) {
+	return nil, nil
+}
+
+func (f *findDefinitionMapper) MapLiteralProperty(_ *code.LiteralProperty) (code.Definition, error) {
+	return nil, nil
+}
+
+func (f *findDefinitionMapper) MapLiteralStruct(_ *code.LiteralStruct) (code.Definition, error) {
 	return nil, nil
 }
 

@@ -59,9 +59,9 @@ func (d *Declare) isStatement()	{}
 func (d *Declare) isDefinition()	{}
 
 type For struct {
-	Initialization	Statement
+	Initialization	Optional[Statement]
 	Condition	Value
-	AfterEach	Statement
+	AfterEach	Optional[Statement]
 	Block		*Block
 	ForMetadata
 }
@@ -94,3 +94,21 @@ type Push struct {
 }
 
 func (p *Push) isStatement()	{}
+
+type DeclareNull struct {
+	Name	string
+	Type	Type
+	DeclareNullMetadata
+}
+
+func (d *DeclareNull) isStatement()	{}
+
+func (d *DeclareNull) isDefinition()	{}
+
+type Break struct{ BreakMetadata }
+
+func (b *Break) isStatement()	{}
+
+type Continue struct{ ContinueMetadata }
+
+func (c *Continue) isStatement()	{}

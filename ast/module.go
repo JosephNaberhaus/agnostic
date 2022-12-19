@@ -13,10 +13,3 @@ type ConstantDef struct {
 }
 
 func (c ConstantDef) isDefinition() {}
-
-type FunctionDef struct {
-	Name       string
-	Arguments  []ArgumentDef
-	Block      Block
-	ReturnType Type
-}

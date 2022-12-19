@@ -13,7 +13,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"text/template"
 )
@@ -23,7 +22,7 @@ var (
 	nodeTypesPath         = flag.String("nodeTypesFile", "./node_types.go", "the node types file")
 	outputFilePath        = flag.String("output", "node_mapper.g.go", "the output file")
 	usePointersForStructs = flag.Bool("usePointersForStructs", false, "whether to use pointers for struct nodes")
-	fileFilter            = flag.String("filterOut", "$^", "regex used to filter out files")
+	exclude               = flag.String("exclude", "", "comma seperated list of filenames to exclude")
 )
 
 //go:embed mapper.go.tmpl
@@ -74,20 +73,25 @@ func isImplementationFile(entry os.DirEntry) bool {
 	}
 }
 
+func excludeSet() map[string]struct{} {
+	set := map[string]struct{}{}
+	for _, filename := range strings.Split(*exclude, ",") {
+		set[filename] = struct{}{}
+	}
+	return set
+}
+
 func findImplementationFilePaths(dirPath string) ([]string, error) {
 	allFiles, err := os.ReadDir(dirPath)
 	if err != nil {
 		return nil, fmt.Errorf("findImplementationFilePaths failed to read directory \"%\": %w", dirPath, err)
 	}
 
-	filter, err := regexp.Compile(*fileFilter)
-	if err != nil {
-		return nil, fmt.Errorf("findImplementationFilePaths failed to compiled file filter out regex: %w", err)
-	}
+	excludeSet := excludeSet()
 
 	var implementationFilePaths []string
 	for _, file := range allFiles {
-		if filter.MatchString(file.Name()) {
+		if _, isExcluded := excludeSet[file.Name()]; isExcluded {
 			continue
 		}
 

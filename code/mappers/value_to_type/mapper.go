@@ -3,7 +3,9 @@ package value_to_type
 import (
 	"errors"
 	"github.com/JosephNaberhaus/agnostic/code"
+	"github.com/JosephNaberhaus/agnostic/code/mappers/callable_def_to_return_type"
 	"github.com/JosephNaberhaus/agnostic/code/mappers/definition_to_type"
+	"reflect"
 	"runtime/debug"
 )
 
@@ -66,14 +68,20 @@ func (m Mapper) MapLiteralString(original *code.LiteralString) (code.Type, error
 // and the output primitive that they produce.
 var unaryOperatorMappings = map[code.Primitive]map[code.UnaryOperator]code.Primitive{
 	code.Boolean: {
-		code.Not: code.Boolean,
+		code.Not:  code.Boolean,
+		code.Hash: code.Int,
 	},
 	code.Int: {
 		code.Negate: code.Int,
+		code.Hash:   code.Int,
 	},
 	code.Rune: {
 		code.CastToInt:    code.Int,
 		code.CastToString: code.String,
+		code.Hash:         code.Int,
+	},
+	code.String: {
+		code.Hash: code.Int,
 	},
 }
 
@@ -89,6 +97,7 @@ var binaryOperatorMappings = map[binaryOperatorPair]map[code.BinaryOperator]code
 		code.GreaterThanOrEqualTo: code.Boolean,
 		code.Multiply:             code.Int,
 		code.Divide:               code.Int,
+		code.Modulo:               code.Int,
 		code.Add:                  code.Int,
 		code.Subtract:             code.Int,
 	},
@@ -101,6 +110,7 @@ var binaryOperatorMappings = map[binaryOperatorPair]map[code.BinaryOperator]code
 		code.GreaterThanOrEqualTo: code.Boolean,
 		code.Multiply:             code.Rune,
 		code.Divide:               code.Rune,
+		code.Modulo:               code.Int,
 		code.Add:                  code.Rune,
 		code.Subtract:             code.Rune,
 	},
@@ -118,50 +128,77 @@ var binaryOperatorMappings = map[binaryOperatorPair]map[code.BinaryOperator]code
 }
 
 func (m Mapper) MapUnaryOperation(original *code.UnaryOperation) (code.Type, error) {
-	inputPrimitive, err := MapValueToPrimitiveType(original.Value)
+	valueType, err := code.MapValue[code.Type](original.Value, m)
 	if err != nil {
 		return nil, err
 	}
 
-	outputMappings, ok := unaryOperatorMappings[inputPrimitive]
-	if !ok {
-		// TODO improve
-		return nil, errors.New("can't use this unary operator on the provided primitive")
+	switch valueType := valueType.(type) {
+	case *code.Model:
+		switch original.Operator {
+		case code.Hash:
+			return code.Int, nil
+		}
+	case *code.List:
+		switch original.Operator {
+		case code.Hash:
+			return code.Int, nil
+		}
+	case *code.Set:
+		switch original.Operator {
+		case code.Hash:
+			return code.Int, nil
+		}
+	case code.Primitive:
+		outputType, ok := unaryOperatorMappings[valueType][original.Operator]
+		if !ok {
+			// TODO improve
+			return nil, errors.New("cannot use the operator with the value")
+		}
+
+		return outputType, nil
 	}
 
-	outputPrimitive, ok := outputMappings[original.Operator]
-	if !ok {
-		// TODO improve
-		return nil, errors.New("invalid unary operator")
-	}
-
-	return outputPrimitive, nil
+	return nil, errors.New("invalid type")
 }
 
 func (m Mapper) MapBinaryOperation(original *code.BinaryOperation) (code.Type, error) {
-	leftPrimitive, err := MapValueToPrimitiveType(original.Left)
+	leftType, err := mapValueToType(original.Left)
 	if err != nil {
 		return nil, err
 	}
 
-	rightPrimitive, err := MapValueToPrimitiveType(original.Right)
+	rightType, err := mapValueToType(original.Right)
 	if err != nil {
 		return nil, err
 	}
 
-	outputMappings, ok := binaryOperatorMappings[binaryOperatorPair{left: leftPrimitive, right: rightPrimitive}]
-	if !ok {
-		// TODO improve
-		return nil, errors.New("can't use this binary operator on the provided primitive")
+	// Allow any type to be equality compared to itself. The validator will further restrict this later on.
+	isEquality := original.Operator == code.Equal || original.Operator == code.NotEqual
+	if isEquality && reflect.DeepEqual(leftType, rightType) {
+		return code.Boolean, nil
 	}
 
-	outputPrimitive, ok := outputMappings[original.Operator]
-	if !ok {
-		// TODO improve
-		return nil, errors.New("invalid binary operator")
+	leftPrimitive, leftIsPrimitive := leftType.(code.Primitive)
+	rightPrimitive, rightIsPrimitive := leftType.(code.Primitive)
+
+	if leftIsPrimitive && rightIsPrimitive {
+		outputMappings, ok := binaryOperatorMappings[binaryOperatorPair{left: leftPrimitive, right: rightPrimitive}]
+		if !ok {
+			// TODO improve
+			return nil, errors.New("can't use this binary operator on the provided primitive")
+		}
+
+		outputPrimitive, ok := outputMappings[original.Operator]
+		if !ok {
+			// TODO improve
+			return nil, errors.New("invalid binary operator")
+		}
+
+		return outputPrimitive, nil
 	}
 
-	return outputPrimitive, nil
+	return nil, errors.New("unsupported types for binary operation")
 }
 
 func (m Mapper) MapProperty(original *code.Property) (code.Type, error) {
@@ -224,7 +261,7 @@ func (m Mapper) MapLiteralList(original *code.LiteralList) (code.Type, error) {
 			return nil, err
 		}
 
-		if elementType != firstElementType {
+		if !reflect.DeepEqual(elementType, firstElementType) {
 			return nil, errors.New("literal list must have elements of the same type")
 		}
 	}
@@ -298,7 +335,7 @@ func (m Mapper) MapLiteralSet(original *code.LiteralSet) (code.Type, error) {
 		}
 	}
 
-	return &code.List{Base: firstElementType}, nil
+	return &code.Set{Base: firstElementType}, nil
 }
 
 func (m Mapper) MapEmptyList(original *code.EmptyList) (code.Type, error) {
@@ -329,4 +366,47 @@ func (m Mapper) MapPop(original *code.Pop) (code.Type, error) {
 
 func (m Mapper) MapLiteralBool(original *code.LiteralBool) (code.Type, error) {
 	return code.Boolean, nil
+}
+
+func (m Mapper) MapNull(original *code.Null) (code.Type, error) {
+	switch parent := original.Parent.(type) {
+	case *code.Return:
+		return code.MapCallableDefNoError[code.Type](parent.CallableDef, callable_def_to_return_type.Mapper{}), nil
+	case *code.BinaryOperation:
+		if parent.Operator != code.Equal && parent.Operator != code.NotEqual {
+			return nil, errors.New("the null literal can only be used for equality comparisons")
+		}
+
+		_, leftIsNull := parent.Left.(*code.Null)
+		_, rightIsNull := parent.Right.(*code.Null)
+		if leftIsNull && rightIsNull {
+			return nil, errors.New("the null literal can not be compared to a null literal")
+		}
+
+		if leftIsNull {
+			return code.MapValue[code.Type](parent.Right, m)
+		} else {
+			return code.MapValue[code.Type](parent.Left, m)
+		}
+	default:
+		return nil, errors.New("unsupported usage of null")
+	}
+}
+
+func (m Mapper) MapSelf(original *code.Self) (code.Type, error) {
+	return &code.Model{
+		Name: original.ParentModel.Name,
+		ModelMetadata: code.ModelMetadata{
+			Definition: original.ParentModel,
+		},
+	}, nil
+}
+
+func (m Mapper) MapLiteralStruct(original *code.LiteralStruct) (code.Type, error) {
+	return &code.Model{
+		Name: original.Definition.Name,
+		ModelMetadata: code.ModelMetadata{
+			Definition: original.Definition,
+		},
+	}, nil
 }

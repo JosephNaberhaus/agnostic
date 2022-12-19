@@ -87,3 +87,19 @@ type EmptySet struct {
 func (e *EmptySet) isValue()	{}
 
 func (e *EmptySet) isConstantValue()	{}
+
+type LiteralProperty struct {
+	Name	string
+	Value	Value
+	LiteralPropertyMetadata
+}
+
+type LiteralStruct struct {
+	Name		string
+	Properties	[]*LiteralProperty
+	LiteralStructMetadata
+}
+
+func (l *LiteralStruct) isValue()	{}
+
+func (l *LiteralStruct) isConstantValue()	{}

@@ -202,11 +202,18 @@ func createStructNameSet(structDefs []structDef) map[string]struct{} {
 
 // updateTypeToPointer converts the type to use pointer semantics rather than value semantics.
 func updateTypeToPointer(typeExpr ast.Expr, structNames map[string]struct{}) ast.Expr {
-	typeName := types.ExprString(typeExpr)
-	if sliceExpr, ok := typeExpr.(*ast.ArrayType); ok {
-		sliceExpr.Elt = updateTypeToPointer(sliceExpr.Elt, structNames)
+	switch typeExpr := typeExpr.(type) {
+	case *ast.ArrayType:
+		// Convert the elements of a slice to pointers.
+		typeExpr.Elt = updateTypeToPointer(typeExpr.Elt, structNames)
 		return typeExpr
-	} else if _, isStruct := structNames[typeName]; isStruct {
+	case *ast.IndexExpr:
+		// Convert the contents of generics to pointers.
+		typeExpr.Index = updateTypeToPointer(typeExpr.Index, structNames)
+	}
+
+	typeName := types.ExprString(typeExpr)
+	if _, isStruct := structNames[typeName]; isStruct {
 		return &ast.StarExpr{X: typeExpr}
 	}
 

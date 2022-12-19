@@ -37,3 +37,9 @@ type Callable interface {
 
 	isCallable()
 }
+
+type CallableDef interface {
+	Node
+
+	isCallableDef()
+}

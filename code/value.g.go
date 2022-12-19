@@ -49,3 +49,11 @@ type Pop struct {
 func (p *Pop) isValue()	{}
 
 func (p *Pop) isStatement()	{}
+
+type Null struct{ NullMetadata }
+
+func (n *Null) isValue()	{}
+
+type Self struct{ SelfMetadata }
+
+func (s *Self) isValue()	{}

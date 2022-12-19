@@ -44,7 +44,7 @@ func alphaConsumer() consumer[string] {
 }
 
 func isNumeric(r rune) bool {
-	return '0' <= r && r < '9'
+	return '0' <= r && r <= '9'
 }
 
 func intConsumer() consumer[*big.Int] {

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/JosephNaberhaus/agnostic/code"
+	"github.com/JosephNaberhaus/agnostic/code/mappers/callable_def_to_return_type"
 	"github.com/JosephNaberhaus/agnostic/code/mappers/value_to_type"
 	"reflect"
 	"regexp"
@@ -79,7 +80,7 @@ func validateReturn(ret *code.Return) error {
 		return err
 	}
 
-	if !reflect.DeepEqual(valueType, ret.StatementMetadata.Parent.ReturnType) {
+	if !reflect.DeepEqual(valueType, code.MapCallableDefNoError[code.Type](ret.CallableDef, callable_def_to_return_type.Mapper{})) {
 		return errors.New("mismatched return types")
 	}
 

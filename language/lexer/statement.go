@@ -53,10 +53,65 @@ func singleLineStatementConsumer() consumer[ast.Statement] {
 
 func inlineStatementConsumer() consumer[ast.Statement] {
 	return first(
+		castToStatement(incrementConsumer()),
+		castToStatement(decrementConsumer()),
 		castToStatement(assignmentConsumer()),
 		castToStatement(returnConsumer()),
 		castToStatement(declareConsumer()),
+		castToStatement(declareNullConsumer()),
 		castToStatement(callConsumer()),
+		castToStatement(breakConsumer()),
+		castToStatement(continueConsumer()),
+	)
+}
+
+func incrementConsumer() consumer[ast.Assignment] {
+	var result ast.Assignment
+	return attempt(
+		&result,
+		inOrder(
+			anyWhitespaceConsumer(),
+			handleNoError(
+				valueConsumer(),
+				func(value ast.Value) {
+					result = ast.Assignment{
+						To: value,
+						From: ast.BinaryOperation{
+							Left:     value,
+							Operator: ast.Add,
+							Right:    ast.LiteralInt{Value: 1},
+						},
+					}
+				},
+			),
+			anyWhitespaceConsumer(),
+			skip(stringConsumer("++")),
+		),
+	)
+}
+
+func decrementConsumer() consumer[ast.Assignment] {
+	var result ast.Assignment
+	return attempt(
+		&result,
+		inOrder(
+			anyWhitespaceConsumer(),
+			handleNoError(
+				valueConsumer(),
+				func(value ast.Value) {
+					result = ast.Assignment{
+						To: value,
+						From: ast.BinaryOperation{
+							Left:     value,
+							Operator: ast.Subtract,
+							Right:    ast.LiteralInt{Value: 1},
+						},
+					}
+				},
+			),
+			anyWhitespaceConsumer(),
+			skip(stringConsumer("--")),
+		),
 	)
 }
 
@@ -84,6 +139,7 @@ func assignmentConsumer() consumer[ast.Assignment] {
 						mapResultToConstant(stringConsumer("-"), ast.Subtract),
 						mapResultToConstant(stringConsumer("*"), ast.Multiply),
 						mapResultToConstant(stringConsumer("/"), ast.Divide),
+						mapResultToConstant(stringConsumer("%"), ast.Modulo),
 					),
 					func(operator ast.BinaryOperator) {
 						result.operator = operator
@@ -279,6 +335,30 @@ func declareConsumer() consumer[ast.Declare] {
 	)
 }
 
+func declareNullConsumer() consumer[ast.DeclareNull] {
+	var result ast.DeclareNull
+	return attempt(
+		&result,
+		inOrder(
+			skip(stringConsumer("var")),
+			allWhitespaceConsumer(),
+			handleNoError(
+				alphaConsumer(),
+				func(name string) {
+					result.Name = name
+				},
+			),
+			anyWhitespaceConsumer(),
+			handleNoError(
+				typeConsumer(),
+				func(declareType ast.Type) {
+					result.Type = declareType
+				},
+			),
+		),
+	)
+}
+
 func forConsumer() consumer[ast.For] {
 	var result ast.For
 	return attempt(
@@ -288,15 +368,18 @@ func forConsumer() consumer[ast.For] {
 			skip(stringConsumer("for")),
 			anyWhitespaceConsumer(),
 			skip(stringConsumer("(")),
-			optional(handleNoError(
-				inlineStatementConsumer(),
-				func(initialization ast.Statement) {
-					result.Initialization = initialization
-				},
+			anyWhitespaceConsumer(),
+			optional(inOrder(
+				handleNoError(
+					inlineStatementConsumer(),
+					func(initialization ast.Statement) {
+						result.Initialization.Set(initialization)
+					},
+				),
+				anyWhitespaceConsumer(),
+				skip(stringConsumer(";")),
+				anyWhitespaceConsumer(),
 			)),
-			anyWhitespaceConsumer(),
-			skip(stringConsumer(";")),
-			anyWhitespaceConsumer(),
 			optional(handleNoError(
 				valueConsumer(),
 				func(condition ast.Value) {
@@ -304,15 +387,17 @@ func forConsumer() consumer[ast.For] {
 				},
 			)),
 			anyWhitespaceConsumer(),
-			skip(stringConsumer(";")),
-			anyWhitespaceConsumer(),
-			optional(handleNoError(
-				inlineStatementConsumer(),
-				func(afterEach ast.Statement) {
-					result.AfterEach = afterEach
-				},
+			optional(inOrder(
+				skip(stringConsumer(";")),
+				anyWhitespaceConsumer(),
+				handleNoError(
+					inlineStatementConsumer(),
+					func(afterEach ast.Statement) {
+						result.AfterEach.Set(afterEach)
+					},
+				),
+				anyWhitespaceConsumer(),
 			)),
-			anyWhitespaceConsumer(),
 			skip(stringConsumer(")")),
 			anyWhitespaceConsumer(),
 			skip(stringConsumer("{")),
@@ -388,4 +473,12 @@ func callConsumer() consumer[ast.Call] {
 			return ast.Call{}, errors.New("expected function call")
 		},
 	)
+}
+
+func breakConsumer() consumer[ast.Break] {
+	return mapResultToConstant(stringConsumer("break"), ast.Break{})
+}
+
+func continueConsumer() consumer[ast.Continue] {
+	return mapResultToConstant(stringConsumer("continue"), ast.Continue{})
 }

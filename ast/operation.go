@@ -9,6 +9,7 @@ const (
 	Negate
 	CastToInt
 	CastToString
+	Hash
 )
 
 type UnaryOperation struct {
@@ -35,6 +36,7 @@ const (
 	GreaterThanOrEqualTo
 	Or
 	And
+	Modulo
 )
 
 type BinaryOperation struct {

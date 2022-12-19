@@ -9,25 +9,33 @@ type FieldDef struct {
 
 func (f FieldDef) isDefinition() {}
 
-// Method
+// EqualOverride
 
-type ArgumentDef struct {
-	Name string
-	Type Type
+type EqualOverride struct {
+	OtherName string
+	Block     Block
 }
 
-func (a ArgumentDef) isDefinition() {}
+func (e EqualOverride) isCallableDef() {}
 
-type MethodDef struct {
-	Function FunctionDef
+func (e EqualOverride) isDefinition() {}
+
+// HashOverride
+
+type HashOverride struct {
+	Block Block
 }
+
+func (h HashOverride) isCallableDef() {}
 
 // Model
 
 type ModelDef struct {
-	Name    string
-	Fields  []FieldDef
-	Methods []MethodDef
+	Name          string
+	Fields        []FieldDef
+	Methods       []FunctionDef
+	EqualOverride Optional[EqualOverride]
+	HashOverride  Optional[HashOverride]
 }
 
 // Variable

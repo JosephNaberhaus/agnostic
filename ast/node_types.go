@@ -1,4 +1,4 @@
-//go:generate go run ../tool/mapper_generator/main.go
+//go:generate go run ../tool/mapper_generator -exclude=optional.go
 
 package ast
 
@@ -34,6 +34,12 @@ type ConstantValue interface {
 
 type Callable interface {
 	Node
-	// isCallable is only a type-guard to limit what can be used as a callable
+	// isCallable is only a type-guard to limit what can be used as a Callable
 	isCallable()
+}
+
+type CallableDef interface {
+	Node
+	// isCallableDef is only a type-guard to limit what can be used as a CallableDef
+	isCallableDef()
 }

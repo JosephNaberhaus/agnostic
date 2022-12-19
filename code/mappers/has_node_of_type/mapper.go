@@ -80,18 +80,6 @@ func (m Mapper[T]) MapArgumentDef(original *code.ArgumentDef) bool {
 	return false
 }
 
-func (m Mapper[T]) MapMethodDef(original *code.MethodDef) bool {
-	if m.isTargetType(original) {
-		return true
-	}
-
-	if m.MapFunctionDef(original.Function) {
-		return true
-	}
-
-	return false
-}
-
 func (m Mapper[T]) MapModelDef(original *code.ModelDef) bool {
 	if m.isTargetType(original) {
 		return true
@@ -102,6 +90,14 @@ func (m Mapper[T]) MapModelDef(original *code.ModelDef) bool {
 	}
 
 	if any(code.MapNodesNoError[bool](original.Methods, m)) {
+		return true
+	}
+
+	if original.EqualOverride.IsSet() && m.MapEqualOverride(original.EqualOverride.Value()) {
+		return true
+	}
+
+	if original.HashOverride.IsSet() && m.MapHashOverride(original.HashOverride.Value()) {
 		return true
 	}
 
@@ -417,7 +413,7 @@ func (m Mapper[T]) MapFor(original *code.For) bool {
 		return true
 	}
 
-	if code.MapStatementNoError[bool](original.Initialization, m) {
+	if original.Initialization.IsSet() && code.MapStatementNoError[bool](original.Initialization.Value(), m) {
 		return true
 	}
 
@@ -425,7 +421,7 @@ func (m Mapper[T]) MapFor(original *code.For) bool {
 		return true
 	}
 
-	if code.MapStatementNoError[bool](original.AfterEach, m) {
+	if original.AfterEach.IsSet() && code.MapStatementNoError[bool](original.AfterEach.Value(), m) {
 		return true
 	}
 
@@ -638,6 +634,98 @@ func (m Mapper[T]) MapPop(original *code.Pop) bool {
 
 func (m Mapper[T]) MapLiteralBool(original *code.LiteralBool) bool {
 	if m.isTargetType(original) {
+		return true
+	}
+
+	return false
+}
+
+func (m Mapper[T]) MapNull(original *code.Null) bool {
+	if m.isTargetType(original) {
+		return true
+	}
+
+	return false
+}
+
+func (m Mapper[T]) MapSelf(original *code.Self) bool {
+	if m.isTargetType(original) {
+		return true
+	}
+
+	return false
+}
+
+func (m Mapper[T]) MapDeclareNull(original *code.DeclareNull) bool {
+	if m.isTargetType(original) {
+		return true
+	}
+
+	if code.MapTypeNoError[bool](original.Type, m) {
+		return true
+	}
+
+	return false
+}
+
+func (m Mapper[T]) MapBreak(original *code.Break) bool {
+	if m.isTargetType(original) {
+		return true
+	}
+
+	return false
+}
+
+func (m Mapper[T]) MapContinue(original *code.Continue) bool {
+	if m.isTargetType(original) {
+		return true
+	}
+
+	return false
+}
+
+func (m Mapper[T]) MapEqualOverride(original *code.EqualOverride) bool {
+	if m.isTargetType(original) {
+		return true
+	}
+
+	if m.MapBlock(original.Block) {
+		return true
+	}
+
+	return false
+}
+
+func (m Mapper[T]) MapHashOverride(original *code.HashOverride) bool {
+	if m.isTargetType(original) {
+		return true
+	}
+
+	if m.MapBlock(original.Block) {
+		return true
+	}
+
+	return false
+}
+
+func (m Mapper[T]) MapLiteralProperty(original *code.LiteralProperty) bool {
+	if m.isTargetType(original) {
+		return true
+	}
+
+	if code.MapValueNoError[bool](original.Value, m) {
+		return true
+	}
+
+	return false
+}
+
+func (m Mapper[T]) MapLiteralStruct(original *code.LiteralStruct) bool {
+	if m.isTargetType(original) {
+		return true
+	}
+
+	if any(code.MapNodesNoError[bool](original.Properties, m)) {
 		return true
 	}
 

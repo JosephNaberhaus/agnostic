@@ -15,7 +15,7 @@ func InStack(targetName string, stack code.Stack) (*code.FunctionDef, error) {
 			}
 		case *code.ModelDef:
 			if method, ok := node.MethodMap[targetName]; ok {
-				return method.Function, nil
+				return method, nil
 			}
 		}
 	}

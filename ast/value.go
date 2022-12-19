@@ -53,3 +53,15 @@ type Pop struct {
 func (p Pop) isValue() {}
 
 func (p Pop) isStatement() {}
+
+// Null
+
+type Null struct{}
+
+func (n Null) isValue() {}
+
+// Self
+
+type Self struct{}
+
+func (s Self) isValue() {}

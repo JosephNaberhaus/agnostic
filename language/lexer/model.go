@@ -1,6 +1,7 @@
 package lexer
 
 import (
+	"errors"
 	"github.com/JosephNaberhaus/agnostic/ast"
 )
 
@@ -36,9 +37,33 @@ func modelDefConsumer() consumer[ast.ModelDef] {
 						},
 					),
 					handleNoError(
-						methodDefConsumer(),
-						func(method ast.MethodDef) {
+						functionDefConsumer(),
+						func(method ast.FunctionDef) {
 							result.Methods = append(result.Methods, method)
+						},
+					),
+					handle(
+						equalOverrideConsumer(),
+						func(equalOverride ast.EqualOverride) error {
+							if result.EqualOverride.IsSet() {
+								return errors.New("only one definition of @== is allowed")
+							}
+
+							result.EqualOverride.Set(equalOverride)
+
+							return nil
+						},
+					),
+					handle(
+						hashOverrideConsumer(),
+						func(hashOverride ast.HashOverride) error {
+							if result.HashOverride.IsSet() {
+								return errors.New("only one definition of @hash is allowed")
+							}
+
+							result.HashOverride.Set(hashOverride)
+
+							return nil
 						},
 					),
 				),
@@ -73,63 +98,6 @@ func fieldDefConsumer() consumer[ast.FieldDef] {
 			),
 			anyWhitespaceConsumer(),
 			skip(stringConsumer(";")),
-			emptyLineConsumer(),
-		),
-	)
-}
-
-func methodDefConsumer() consumer[ast.MethodDef] {
-	return mapResult(
-		functionDefConsumer(),
-		func(functionDef ast.FunctionDef) (ast.MethodDef, error) {
-			return ast.MethodDef{
-				Function: functionDef,
-			}, nil
-		},
-	)
-}
-
-func functionDefConsumer() consumer[ast.FunctionDef] {
-	var result ast.FunctionDef
-	return attempt(
-		&result,
-		inOrder(
-			anyWhitespaceConsumer(),
-			handleNoError(
-				alphaConsumer(),
-				func(name string) {
-					result.Name = name
-				},
-			),
-			anyWhitespaceConsumer(),
-			skip(stringConsumer("(")),
-			handleNoError(
-				argumentsConsumer(),
-				func(arguments []ast.ArgumentDef) {
-					result.Arguments = arguments
-				},
-			),
-			skip(stringConsumer(")")),
-			anyWhitespaceConsumer(),
-			skip(stringConsumer(":")),
-			anyWhitespaceConsumer(),
-			handleNoError(
-				typeConsumer(),
-				func(returnType ast.Type) {
-					result.ReturnType = returnType
-				},
-			),
-			anyWhitespaceConsumer(),
-			skip(stringConsumer("{")),
-			emptyLineConsumer(),
-			handleNoError(
-				blockConsumer(),
-				func(block ast.Block) {
-					result.Block = block
-				},
-			),
-			anyWhitespaceConsumer(),
-			skip(stringConsumer("}")),
 			emptyLineConsumer(),
 		),
 	)
@@ -184,6 +152,113 @@ func argumentConsumer() consumer[ast.ArgumentDef] {
 					result.Type = argumentType
 				},
 			),
+		),
+	)
+}
+
+func functionDefConsumer() consumer[ast.FunctionDef] {
+	var result ast.FunctionDef
+	return attempt(
+		&result,
+		inOrder(
+			anyWhitespaceConsumer(),
+			handleNoError(
+				alphaConsumer(),
+				func(name string) {
+					result.Name = name
+				},
+			),
+			anyWhitespaceConsumer(),
+			skip(stringConsumer("(")),
+			handleNoError(
+				argumentsConsumer(),
+				func(arguments []ast.ArgumentDef) {
+					result.Arguments = arguments
+				},
+			),
+			skip(stringConsumer(")")),
+			anyWhitespaceConsumer(),
+			skip(stringConsumer(":")),
+			anyWhitespaceConsumer(),
+			handleNoError(
+				typeConsumer(),
+				func(returnType ast.Type) {
+					result.ReturnType = returnType
+				},
+			),
+			anyWhitespaceConsumer(),
+			skip(stringConsumer("{")),
+			emptyLineConsumer(),
+			handleNoError(
+				blockConsumer(),
+				func(block ast.Block) {
+					result.Block = block
+				},
+			),
+			anyWhitespaceConsumer(),
+			skip(stringConsumer("}")),
+			emptyLineConsumer(),
+		),
+	)
+}
+
+func equalOverrideConsumer() consumer[ast.EqualOverride] {
+	var result ast.EqualOverride
+	return attempt(
+		&result,
+		inOrder(
+			anyWhitespaceConsumer(),
+			skip(stringConsumer("@==")),
+			anyWhitespaceConsumer(),
+			skip(stringConsumer("(")),
+			anyWhitespaceConsumer(),
+			handleNoError(
+				alphaConsumer(),
+				func(otherName string) {
+					result.OtherName = otherName
+				},
+			),
+			anyWhitespaceConsumer(),
+			skip(stringConsumer(")")),
+			anyWhitespaceConsumer(),
+			skip(stringConsumer("{")),
+			emptyLineConsumer(),
+			handleNoError(
+				blockConsumer(),
+				func(block ast.Block) {
+					result.Block = block
+				},
+			),
+			anyWhitespaceConsumer(),
+			skip(stringConsumer("}")),
+			emptyLineConsumer(),
+		),
+	)
+}
+
+func hashOverrideConsumer() consumer[ast.HashOverride] {
+	var result ast.HashOverride
+	return attempt(
+		&result,
+		inOrder(
+			anyWhitespaceConsumer(),
+			skip(stringConsumer("@hash")),
+			anyWhitespaceConsumer(),
+			skip(stringConsumer("(")),
+			anyWhitespaceConsumer(),
+			skip(stringConsumer(")")),
+			anyWhitespaceConsumer(),
+			skip(stringConsumer("{")),
+			emptyLineConsumer(),
+			handleNoError(
+				blockConsumer(),
+				func(block ast.Block) {
+					result.Block = block
+				},
+			),
+			anyWhitespaceConsumer(),
+			skip(stringConsumer("}")),
+			emptyLineConsumer(),
 		),
 	)
 }

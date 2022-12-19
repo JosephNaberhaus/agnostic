@@ -28,5 +28,5 @@ func (m Mapper) MapFunctionProperty(original *code.FunctionProperty) (*code.Func
 		return nil, errors.New("no method found")
 	}
 
-	return method.Function, nil
+	return method, nil
 }

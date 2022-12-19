@@ -12,6 +12,10 @@ func (f Function) isNode() {}
 
 func (f FunctionProperty) isNode() {}
 
+func (a ArgumentDef) isNode() {}
+
+func (f FunctionDef) isNode() {}
+
 func (l LiteralInt) isNode() {}
 
 func (l LiteralRune) isNode() {}
@@ -32,11 +36,15 @@ func (e EmptyList) isNode() {}
 
 func (e EmptySet) isNode() {}
 
+func (l LiteralProperty) isNode() {}
+
+func (l LiteralStruct) isNode() {}
+
 func (f FieldDef) isNode() {}
 
-func (a ArgumentDef) isNode() {}
+func (e EqualOverride) isNode() {}
 
-func (m MethodDef) isNode() {}
+func (h HashOverride) isNode() {}
 
 func (m ModelDef) isNode() {}
 
@@ -47,8 +55,6 @@ func (p Property) isNode() {}
 func (m Module) isNode() {}
 
 func (c ConstantDef) isNode() {}
-
-func (f FunctionDef) isNode() {}
 
 func (u UnaryOperator) isNode() {}
 
@@ -82,6 +88,12 @@ func (a AddToSet) isNode() {}
 
 func (p Push) isNode() {}
 
+func (d DeclareNull) isNode() {}
+
+func (b Break) isNode() {}
+
+func (c Continue) isNode() {}
+
 func (m Model) isNode() {}
 
 func (p Primitive) isNode() {}
@@ -104,10 +116,18 @@ func (s SetContains) isNode() {}
 
 func (p Pop) isNode() {}
 
+func (n Null) isNode() {}
+
+func (s Self) isNode() {}
+
 type NodeMapper[T any] interface {
 	MapFunction(original Function) (T, error)
 
 	MapFunctionProperty(original FunctionProperty) (T, error)
+
+	MapArgumentDef(original ArgumentDef) (T, error)
+
+	MapFunctionDef(original FunctionDef) (T, error)
 
 	MapLiteralInt(original LiteralInt) (T, error)
 
@@ -129,11 +149,15 @@ type NodeMapper[T any] interface {
 
 	MapEmptySet(original EmptySet) (T, error)
 
+	MapLiteralProperty(original LiteralProperty) (T, error)
+
+	MapLiteralStruct(original LiteralStruct) (T, error)
+
 	MapFieldDef(original FieldDef) (T, error)
 
-	MapArgumentDef(original ArgumentDef) (T, error)
+	MapEqualOverride(original EqualOverride) (T, error)
 
-	MapMethodDef(original MethodDef) (T, error)
+	MapHashOverride(original HashOverride) (T, error)
 
 	MapModelDef(original ModelDef) (T, error)
 
@@ -144,8 +168,6 @@ type NodeMapper[T any] interface {
 	MapModule(original Module) (T, error)
 
 	MapConstantDef(original ConstantDef) (T, error)
-
-	MapFunctionDef(original FunctionDef) (T, error)
 
 	MapUnaryOperator(original UnaryOperator) (T, error)
 
@@ -179,6 +201,12 @@ type NodeMapper[T any] interface {
 
 	MapPush(original Push) (T, error)
 
+	MapDeclareNull(original DeclareNull) (T, error)
+
+	MapBreak(original Break) (T, error)
+
+	MapContinue(original Continue) (T, error)
+
 	MapModel(original Model) (T, error)
 
 	MapPrimitive(original Primitive) (T, error)
@@ -200,6 +228,10 @@ type NodeMapper[T any] interface {
 	MapSetContains(original SetContains) (T, error)
 
 	MapPop(original Pop) (T, error)
+
+	MapNull(original Null) (T, error)
+
+	MapSelf(original Self) (T, error)
 }
 
 func MapNode[T any](node Node, mapper NodeMapper[T]) (T, error) {
@@ -210,6 +242,12 @@ func MapNode[T any](node Node, mapper NodeMapper[T]) (T, error) {
 
 	case FunctionProperty:
 		return mapper.MapFunctionProperty(value)
+
+	case ArgumentDef:
+		return mapper.MapArgumentDef(value)
+
+	case FunctionDef:
+		return mapper.MapFunctionDef(value)
 
 	case LiteralInt:
 		return mapper.MapLiteralInt(value)
@@ -241,14 +279,20 @@ func MapNode[T any](node Node, mapper NodeMapper[T]) (T, error) {
 	case EmptySet:
 		return mapper.MapEmptySet(value)
 
+	case LiteralProperty:
+		return mapper.MapLiteralProperty(value)
+
+	case LiteralStruct:
+		return mapper.MapLiteralStruct(value)
+
 	case FieldDef:
 		return mapper.MapFieldDef(value)
 
-	case ArgumentDef:
-		return mapper.MapArgumentDef(value)
+	case EqualOverride:
+		return mapper.MapEqualOverride(value)
 
-	case MethodDef:
-		return mapper.MapMethodDef(value)
+	case HashOverride:
+		return mapper.MapHashOverride(value)
 
 	case ModelDef:
 		return mapper.MapModelDef(value)
@@ -264,9 +308,6 @@ func MapNode[T any](node Node, mapper NodeMapper[T]) (T, error) {
 
 	case ConstantDef:
 		return mapper.MapConstantDef(value)
-
-	case FunctionDef:
-		return mapper.MapFunctionDef(value)
 
 	case UnaryOperator:
 		return mapper.MapUnaryOperator(value)
@@ -316,6 +357,15 @@ func MapNode[T any](node Node, mapper NodeMapper[T]) (T, error) {
 	case Push:
 		return mapper.MapPush(value)
 
+	case DeclareNull:
+		return mapper.MapDeclareNull(value)
+
+	case Break:
+		return mapper.MapBreak(value)
+
+	case Continue:
+		return mapper.MapContinue(value)
+
 	case Model:
 		return mapper.MapModel(value)
 
@@ -349,6 +399,12 @@ func MapNode[T any](node Node, mapper NodeMapper[T]) (T, error) {
 	case Pop:
 		return mapper.MapPop(value)
 
+	case Null:
+		return mapper.MapNull(value)
+
+	case Self:
+		return mapper.MapSelf(value)
+
 	default:
 		panic("unreachable")
 	}
@@ -373,6 +429,10 @@ type NodeMapperNoError[T any] interface {
 
 	MapFunctionProperty(original FunctionProperty) T
 
+	MapArgumentDef(original ArgumentDef) T
+
+	MapFunctionDef(original FunctionDef) T
+
 	MapLiteralInt(original LiteralInt) T
 
 	MapLiteralRune(original LiteralRune) T
@@ -393,11 +453,15 @@ type NodeMapperNoError[T any] interface {
 
 	MapEmptySet(original EmptySet) T
 
+	MapLiteralProperty(original LiteralProperty) T
+
+	MapLiteralStruct(original LiteralStruct) T
+
 	MapFieldDef(original FieldDef) T
 
-	MapArgumentDef(original ArgumentDef) T
+	MapEqualOverride(original EqualOverride) T
 
-	MapMethodDef(original MethodDef) T
+	MapHashOverride(original HashOverride) T
 
 	MapModelDef(original ModelDef) T
 
@@ -408,8 +472,6 @@ type NodeMapperNoError[T any] interface {
 	MapModule(original Module) T
 
 	MapConstantDef(original ConstantDef) T
-
-	MapFunctionDef(original FunctionDef) T
 
 	MapUnaryOperator(original UnaryOperator) T
 
@@ -443,6 +505,12 @@ type NodeMapperNoError[T any] interface {
 
 	MapPush(original Push) T
 
+	MapDeclareNull(original DeclareNull) T
+
+	MapBreak(original Break) T
+
+	MapContinue(original Continue) T
+
 	MapModel(original Model) T
 
 	MapPrimitive(original Primitive) T
@@ -464,6 +532,10 @@ type NodeMapperNoError[T any] interface {
 	MapSetContains(original SetContains) T
 
 	MapPop(original Pop) T
+
+	MapNull(original Null) T
+
+	MapSelf(original Self) T
 }
 
 func MapNodeNoError[T any](node Node, mapper NodeMapperNoError[T]) T {
@@ -474,6 +546,12 @@ func MapNodeNoError[T any](node Node, mapper NodeMapperNoError[T]) T {
 
 	case FunctionProperty:
 		return mapper.MapFunctionProperty(value)
+
+	case ArgumentDef:
+		return mapper.MapArgumentDef(value)
+
+	case FunctionDef:
+		return mapper.MapFunctionDef(value)
 
 	case LiteralInt:
 		return mapper.MapLiteralInt(value)
@@ -505,14 +583,20 @@ func MapNodeNoError[T any](node Node, mapper NodeMapperNoError[T]) T {
 	case EmptySet:
 		return mapper.MapEmptySet(value)
 
+	case LiteralProperty:
+		return mapper.MapLiteralProperty(value)
+
+	case LiteralStruct:
+		return mapper.MapLiteralStruct(value)
+
 	case FieldDef:
 		return mapper.MapFieldDef(value)
 
-	case ArgumentDef:
-		return mapper.MapArgumentDef(value)
+	case EqualOverride:
+		return mapper.MapEqualOverride(value)
 
-	case MethodDef:
-		return mapper.MapMethodDef(value)
+	case HashOverride:
+		return mapper.MapHashOverride(value)
 
 	case ModelDef:
 		return mapper.MapModelDef(value)
@@ -528,9 +612,6 @@ func MapNodeNoError[T any](node Node, mapper NodeMapperNoError[T]) T {
 
 	case ConstantDef:
 		return mapper.MapConstantDef(value)
-
-	case FunctionDef:
-		return mapper.MapFunctionDef(value)
 
 	case UnaryOperator:
 		return mapper.MapUnaryOperator(value)
@@ -580,6 +661,15 @@ func MapNodeNoError[T any](node Node, mapper NodeMapperNoError[T]) T {
 	case Push:
 		return mapper.MapPush(value)
 
+	case DeclareNull:
+		return mapper.MapDeclareNull(value)
+
+	case Break:
+		return mapper.MapBreak(value)
+
+	case Continue:
+		return mapper.MapContinue(value)
+
 	case Model:
 		return mapper.MapModel(value)
 
@@ -612,6 +702,12 @@ func MapNodeNoError[T any](node Node, mapper NodeMapperNoError[T]) T {
 
 	case Pop:
 		return mapper.MapPop(value)
+
+	case Null:
+		return mapper.MapNull(value)
+
+	case Self:
+		return mapper.MapSelf(value)
 
 	default:
 		panic("unreachable")
@@ -690,6 +786,79 @@ func MapCallablesNoError[T any](nodes []Callable, mapper CallableMapperNoError[T
 	return resultNodes
 }
 
+type CallableDefMapper[T any] interface {
+	MapFunctionDef(original FunctionDef) (T, error)
+
+	MapEqualOverride(original EqualOverride) (T, error)
+
+	MapHashOverride(original HashOverride) (T, error)
+}
+
+func MapCallableDef[T any](nodeType CallableDef, mapper CallableDefMapper[T]) (T, error) {
+	switch value := nodeType.(type) {
+
+	case FunctionDef:
+		return mapper.MapFunctionDef(value)
+
+	case EqualOverride:
+		return mapper.MapEqualOverride(value)
+
+	case HashOverride:
+		return mapper.MapHashOverride(value)
+
+	default:
+		panic("unreachable")
+	}
+}
+
+func MapCallableDefs[T any](nodes []CallableDef, mapper CallableDefMapper[T]) ([]T, error) {
+	var resultNodes []T
+	for _, node := range nodes {
+		resultNode, err := MapCallableDef(node, mapper)
+		if err != nil {
+			return nil, err
+		}
+
+		resultNodes = append(resultNodes, resultNode)
+	}
+
+	return resultNodes, nil
+}
+
+type CallableDefMapperNoError[T any] interface {
+	MapFunctionDef(original FunctionDef) T
+
+	MapEqualOverride(original EqualOverride) T
+
+	MapHashOverride(original HashOverride) T
+}
+
+func MapCallableDefNoError[T any](node CallableDef, mapper CallableDefMapperNoError[T]) T {
+	switch value := node.(type) {
+
+	case FunctionDef:
+		return mapper.MapFunctionDef(value)
+
+	case EqualOverride:
+		return mapper.MapEqualOverride(value)
+
+	case HashOverride:
+		return mapper.MapHashOverride(value)
+
+	default:
+		panic("unreachable")
+	}
+}
+
+func MapCallableDefsNoError[T any](nodes []CallableDef, mapper CallableDefMapperNoError[T]) []T {
+	var resultNodes []T
+	for _, node := range nodes {
+		resultNodes = append(resultNodes, MapCallableDefNoError(node, mapper))
+	}
+
+	return resultNodes
+}
+
 type ConstantValueMapper[T any] interface {
 	MapLiteralInt(original LiteralInt) (T, error)
 
@@ -708,6 +877,8 @@ type ConstantValueMapper[T any] interface {
 	MapEmptyList(original EmptyList) (T, error)
 
 	MapEmptySet(original EmptySet) (T, error)
+
+	MapLiteralStruct(original LiteralStruct) (T, error)
 }
 
 func MapConstantValue[T any](nodeType ConstantValue, mapper ConstantValueMapper[T]) (T, error) {
@@ -739,6 +910,9 @@ func MapConstantValue[T any](nodeType ConstantValue, mapper ConstantValueMapper[
 
 	case EmptySet:
 		return mapper.MapEmptySet(value)
+
+	case LiteralStruct:
+		return mapper.MapLiteralStruct(value)
 
 	default:
 		panic("unreachable")
@@ -777,6 +951,8 @@ type ConstantValueMapperNoError[T any] interface {
 	MapEmptyList(original EmptyList) T
 
 	MapEmptySet(original EmptySet) T
+
+	MapLiteralStruct(original LiteralStruct) T
 }
 
 func MapConstantValueNoError[T any](node ConstantValue, mapper ConstantValueMapperNoError[T]) T {
@@ -809,6 +985,9 @@ func MapConstantValueNoError[T any](node ConstantValue, mapper ConstantValueMapp
 	case EmptySet:
 		return mapper.MapEmptySet(value)
 
+	case LiteralStruct:
+		return mapper.MapLiteralStruct(value)
+
 	default:
 		panic("unreachable")
 	}
@@ -824,25 +1003,32 @@ func MapConstantValuesNoError[T any](nodes []ConstantValue, mapper ConstantValue
 }
 
 type DefinitionMapper[T any] interface {
+	MapArgumentDef(original ArgumentDef) (T, error)
+
 	MapFieldDef(original FieldDef) (T, error)
 
-	MapArgumentDef(original ArgumentDef) (T, error)
+	MapEqualOverride(original EqualOverride) (T, error)
 
 	MapConstantDef(original ConstantDef) (T, error)
 
 	MapDeclare(original Declare) (T, error)
 
 	MapForIn(original ForIn) (T, error)
+
+	MapDeclareNull(original DeclareNull) (T, error)
 }
 
 func MapDefinition[T any](nodeType Definition, mapper DefinitionMapper[T]) (T, error) {
 	switch value := nodeType.(type) {
 
+	case ArgumentDef:
+		return mapper.MapArgumentDef(value)
+
 	case FieldDef:
 		return mapper.MapFieldDef(value)
 
-	case ArgumentDef:
-		return mapper.MapArgumentDef(value)
+	case EqualOverride:
+		return mapper.MapEqualOverride(value)
 
 	case ConstantDef:
 		return mapper.MapConstantDef(value)
@@ -852,6 +1038,9 @@ func MapDefinition[T any](nodeType Definition, mapper DefinitionMapper[T]) (T, e
 
 	case ForIn:
 		return mapper.MapForIn(value)
+
+	case DeclareNull:
+		return mapper.MapDeclareNull(value)
 
 	default:
 		panic("unreachable")
@@ -873,25 +1062,32 @@ func MapDefinitions[T any](nodes []Definition, mapper DefinitionMapper[T]) ([]T,
 }
 
 type DefinitionMapperNoError[T any] interface {
+	MapArgumentDef(original ArgumentDef) T
+
 	MapFieldDef(original FieldDef) T
 
-	MapArgumentDef(original ArgumentDef) T
+	MapEqualOverride(original EqualOverride) T
 
 	MapConstantDef(original ConstantDef) T
 
 	MapDeclare(original Declare) T
 
 	MapForIn(original ForIn) T
+
+	MapDeclareNull(original DeclareNull) T
 }
 
 func MapDefinitionNoError[T any](node Definition, mapper DefinitionMapperNoError[T]) T {
 	switch value := node.(type) {
 
+	case ArgumentDef:
+		return mapper.MapArgumentDef(value)
+
 	case FieldDef:
 		return mapper.MapFieldDef(value)
 
-	case ArgumentDef:
-		return mapper.MapArgumentDef(value)
+	case EqualOverride:
+		return mapper.MapEqualOverride(value)
 
 	case ConstantDef:
 		return mapper.MapConstantDef(value)
@@ -901,6 +1097,9 @@ func MapDefinitionNoError[T any](node Definition, mapper DefinitionMapperNoError
 
 	case ForIn:
 		return mapper.MapForIn(value)
+
+	case DeclareNull:
+		return mapper.MapDeclareNull(value)
 
 	default:
 		panic("unreachable")
@@ -933,6 +1132,12 @@ type StatementMapper[T any] interface {
 
 	MapPush(original Push) (T, error)
 
+	MapDeclareNull(original DeclareNull) (T, error)
+
+	MapBreak(original Break) (T, error)
+
+	MapContinue(original Continue) (T, error)
+
 	MapCall(original Call) (T, error)
 
 	MapPop(original Pop) (T, error)
@@ -964,6 +1169,15 @@ func MapStatement[T any](nodeType Statement, mapper StatementMapper[T]) (T, erro
 
 	case Push:
 		return mapper.MapPush(value)
+
+	case DeclareNull:
+		return mapper.MapDeclareNull(value)
+
+	case Break:
+		return mapper.MapBreak(value)
+
+	case Continue:
+		return mapper.MapContinue(value)
 
 	case Call:
 		return mapper.MapCall(value)
@@ -1007,6 +1221,12 @@ type StatementMapperNoError[T any] interface {
 
 	MapPush(original Push) T
 
+	MapDeclareNull(original DeclareNull) T
+
+	MapBreak(original Break) T
+
+	MapContinue(original Continue) T
+
 	MapCall(original Call) T
 
 	MapPop(original Pop) T
@@ -1038,6 +1258,15 @@ func MapStatementNoError[T any](node Statement, mapper StatementMapperNoError[T]
 
 	case Push:
 		return mapper.MapPush(value)
+
+	case DeclareNull:
+		return mapper.MapDeclareNull(value)
+
+	case Break:
+		return mapper.MapBreak(value)
+
+	case Continue:
+		return mapper.MapContinue(value)
 
 	case Call:
 		return mapper.MapCall(value)
@@ -1171,6 +1400,8 @@ type ValueMapper[T any] interface {
 
 	MapEmptySet(original EmptySet) (T, error)
 
+	MapLiteralStruct(original LiteralStruct) (T, error)
+
 	MapVariable(original Variable) (T, error)
 
 	MapProperty(original Property) (T, error)
@@ -1190,6 +1421,10 @@ type ValueMapper[T any] interface {
 	MapSetContains(original SetContains) (T, error)
 
 	MapPop(original Pop) (T, error)
+
+	MapNull(original Null) (T, error)
+
+	MapSelf(original Self) (T, error)
 }
 
 func MapValue[T any](nodeType Value, mapper ValueMapper[T]) (T, error) {
@@ -1222,6 +1457,9 @@ func MapValue[T any](nodeType Value, mapper ValueMapper[T]) (T, error) {
 	case EmptySet:
 		return mapper.MapEmptySet(value)
 
+	case LiteralStruct:
+		return mapper.MapLiteralStruct(value)
+
 	case Variable:
 		return mapper.MapVariable(value)
 
@@ -1251,6 +1489,12 @@ func MapValue[T any](nodeType Value, mapper ValueMapper[T]) (T, error) {
 
 	case Pop:
 		return mapper.MapPop(value)
+
+	case Null:
+		return mapper.MapNull(value)
+
+	case Self:
+		return mapper.MapSelf(value)
 
 	default:
 		panic("unreachable")
@@ -1290,6 +1534,8 @@ type ValueMapperNoError[T any] interface {
 
 	MapEmptySet(original EmptySet) T
 
+	MapLiteralStruct(original LiteralStruct) T
+
 	MapVariable(original Variable) T
 
 	MapProperty(original Property) T
@@ -1309,6 +1555,10 @@ type ValueMapperNoError[T any] interface {
 	MapSetContains(original SetContains) T
 
 	MapPop(original Pop) T
+
+	MapNull(original Null) T
+
+	MapSelf(original Self) T
 }
 
 func MapValueNoError[T any](node Value, mapper ValueMapperNoError[T]) T {
@@ -1341,6 +1591,9 @@ func MapValueNoError[T any](node Value, mapper ValueMapperNoError[T]) T {
 	case EmptySet:
 		return mapper.MapEmptySet(value)
 
+	case LiteralStruct:
+		return mapper.MapLiteralStruct(value)
+
 	case Variable:
 		return mapper.MapVariable(value)
 
@@ -1370,6 +1623,12 @@ func MapValueNoError[T any](node Value, mapper ValueMapperNoError[T]) T {
 
 	case Pop:
 		return mapper.MapPop(value)
+
+	case Null:
+		return mapper.MapNull(value)
+
+	case Self:
+		return mapper.MapSelf(value)
 
 	default:
 		panic("unreachable")

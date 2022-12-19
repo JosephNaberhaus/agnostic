@@ -1,5 +1,5 @@
-//go:generate go run ../tool/code_generator/main.go
-//go:generate go run ../tool/mapper_generator/main.go -usePointersForStructs -nodeTypesFile=node_types.g.go -filterOut=(metadata)|(stack)
+//go:generate go run ../tool/code_generator
+//go:generate go run ../tool/mapper_generator -usePointersForStructs -nodeTypesFile=node_types.g.go -exclude=metadata.go,optional.g.go,stack.go
 
 package code
 

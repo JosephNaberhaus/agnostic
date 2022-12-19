@@ -61,9 +61,9 @@ func (d Declare) isDefinition() {}
 // For
 
 type For struct {
-	Initialization Statement
+	Initialization Optional[Statement]
 	Condition      Value
-	AfterEach      Statement
+	AfterEach      Optional[Statement]
 	Block          Block
 }
 
@@ -99,3 +99,26 @@ type Push struct {
 }
 
 func (p Push) isStatement() {}
+
+// Declare
+
+type DeclareNull struct {
+	Name string
+	Type Type
+}
+
+func (d DeclareNull) isStatement() {}
+
+func (d DeclareNull) isDefinition() {}
+
+// Break
+
+type Break struct{}
+
+func (b Break) isStatement() {}
+
+// Continue
+
+type Continue struct{}
+
+func (c Continue) isStatement() {}

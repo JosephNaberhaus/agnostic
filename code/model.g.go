@@ -10,23 +10,29 @@ type FieldDef struct {
 
 func (f *FieldDef) isDefinition()	{}
 
-type ArgumentDef struct {
-	Name	string
-	Type	Type
-	ArgumentDefMetadata
+type EqualOverride struct {
+	OtherName	string
+	Block		*Block
+	EqualOverrideMetadata
 }
 
-func (a *ArgumentDef) isDefinition()	{}
+func (e *EqualOverride) isCallableDef()	{}
 
-type MethodDef struct {
-	Function	*FunctionDef
-	MethodDefMetadata
+func (e *EqualOverride) isDefinition()	{}
+
+type HashOverride struct {
+	Block	*Block
+	HashOverrideMetadata
 }
+
+func (h *HashOverride) isCallableDef()	{}
 
 type ModelDef struct {
-	Name	string
-	Fields	[]*FieldDef
-	Methods	[]*MethodDef
+	Name		string
+	Fields		[]*FieldDef
+	Methods		[]*FunctionDef
+	EqualOverride	Optional[*EqualOverride]
+	HashOverride	Optional[*HashOverride]
 	ModelDefMetadata
 }
 

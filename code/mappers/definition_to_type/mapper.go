@@ -23,3 +23,16 @@ func (m Mapper) MapForIn(original *code.ForIn) code.Type {
 func (m Mapper) MapConstantDef(original *code.ConstantDef) code.Type {
 	return original.Type
 }
+
+func (m Mapper) MapDeclareNull(original *code.DeclareNull) code.Type {
+	return original.Type
+}
+
+func (m Mapper) MapEqualOverride(original *code.EqualOverride) code.Type {
+	return &code.Model{
+		Name: original.ParentModel.Name,
+		ModelMetadata: code.ModelMetadata{
+			Definition: original.ParentModel,
+		},
+	}
+}

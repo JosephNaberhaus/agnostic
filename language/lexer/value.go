@@ -8,6 +8,14 @@ import (
 	"math/big"
 )
 
+func selfConsumer() consumer[ast.Self] {
+	return mapResultToConstant(stringConsumer("self"), ast.Self{})
+}
+
+func nullLiteralConsumer() consumer[ast.Null] {
+	return mapResultToConstant(stringConsumer("null"), ast.Null{})
+}
+
 func boolLiteralConsumer() consumer[ast.LiteralBool] {
 	return first(
 		mapResultToConstant(stringConsumer("false"), ast.LiteralBool{Value: false}),
@@ -70,6 +78,15 @@ func runeLiteralConsumer() consumer[ast.LiteralRune] {
 
 					if state.peekOne() == '\\' {
 						state.consumeOne()
+
+						switch state.consumeOne() {
+						case 'n':
+							return state, '\n', nil
+						case 't':
+							return state, '\t', nil
+						}
+
+						return parserState{}, 0, createError(state, "unsupported escape sequence")
 					}
 
 					result := state.consumeOne()
@@ -129,6 +146,7 @@ const (
 	separator
 	colon
 	function
+	structLiteral
 	listLiteral
 	mapLiteral
 	setLiteral
@@ -136,6 +154,7 @@ const (
 	not
 	multiply
 	divide
+	modulo
 	subtract
 	add
 	equal
@@ -156,7 +175,7 @@ const negativeInf = math.MinInt
 
 func (o operatorType) precedence() int {
 	switch o {
-	case openParen, separator, colon, listLiteral, mapLiteral, setLiteral, function, lookup:
+	case openParen, separator, colon, listLiteral, mapLiteral, setLiteral, function, structLiteral, lookup:
 		return negativeInf
 	case or:
 		return 1
@@ -168,7 +187,7 @@ func (o operatorType) precedence() int {
 		return 4
 	case add, subtract:
 		return 5
-	case multiply, divide:
+	case multiply, divide, modulo:
 		return 6
 	case not, newModel, castToInt, castToString:
 		return 7
@@ -200,6 +219,7 @@ func (b binaryOperator) operatorType() operatorType {
 const (
 	multiplyOperator             = binaryOperator(multiply)
 	divideOperator               = binaryOperator(divide)
+	moduloOperator               = binaryOperator(modulo)
 	subtractOperator             = binaryOperator(subtract)
 	addOperator                  = binaryOperator(add)
 	equalOperator                = binaryOperator(equal)
@@ -236,6 +256,14 @@ type functionOperator struct {
 
 func (f *functionOperator) operatorType() operatorType {
 	return function
+}
+
+type structLiteralOperator struct {
+	numProperties int
+}
+
+func (s *structLiteralOperator) operatorType() operatorType {
+	return structLiteral
 }
 
 type listLiteralOperator struct {
@@ -379,6 +407,8 @@ func binaryOperationToAst(left ast.Value, op operator, right ast.Value) (ast.Val
 		astBinaryOperator = ast.Multiply
 	case divideOperator:
 		astBinaryOperator = ast.Divide
+	case moduloOperator:
+		astBinaryOperator = ast.Modulo
 	case addOperator:
 		astBinaryOperator = ast.Add
 	case subtractOperator:
@@ -465,7 +495,7 @@ func valueConsumer() consumer[ast.Value] {
 					arguments[op.numArgs-i-1] = valueStack.pop()
 				}
 
-				// Convert the variable type into a callable type
+				// Convert the variable type into a callable type.
 				var function ast.Callable
 				switch value := valueStack.pop().(type) {
 				case ast.Property:
@@ -474,6 +504,20 @@ func valueConsumer() consumer[ast.Value] {
 						Name: value.Name,
 					}
 				case ast.Variable:
+					// Check if it's one of the built-in functions.
+					switch value.Name {
+					case "hash":
+						if len(arguments) != 1 {
+							return errors.New("hash can only be called with exactly one argument")
+						}
+
+						valueStack.push(ast.UnaryOperation{
+							Value:    arguments[0],
+							Operator: ast.Hash,
+						})
+						return nil
+					}
+
 					function = ast.Function{
 						Name: value.Name,
 					}
@@ -485,6 +529,30 @@ func valueConsumer() consumer[ast.Value] {
 					Function:  function,
 					Arguments: arguments,
 				})
+			case *structLiteralOperator:
+				properties := make([]ast.LiteralProperty, op.numProperties)
+				for i := 0; i < op.numProperties; i++ {
+					valueValue := valueStack.pop()
+					keyValue := valueStack.pop()
+
+					if keyVariable, ok := keyValue.(ast.Variable); ok {
+						properties[op.numProperties-i-1] = ast.LiteralProperty{
+							Name:  keyVariable.Name,
+							Value: valueValue,
+						}
+					} else {
+						return errors.New("literal property must have variables as keys")
+					}
+				}
+
+				if structNameVariable, ok := valueStack.pop().(ast.Variable); ok {
+					valueStack.push(ast.LiteralStruct{
+						Name:       structNameVariable.Name,
+						Properties: properties,
+					})
+				} else {
+					return errors.New("invalid type to make a struct literal of")
+				}
 			case *listLiteralOperator:
 				items := make([]ast.Value, op.numItems)
 				for i := 0; i < op.numItems; i++ {
@@ -602,6 +670,8 @@ func valueConsumer() consumer[ast.Value] {
 				newlineConsumer(),
 				handle(
 					first(
+						castToValue(nullLiteralConsumer()),
+						castToValue(selfConsumer()),
 						castToValue(boolLiteralConsumer()),
 						castToValue(intLiteralConsumer()),
 						castToValue(runeLiteralConsumer()),
@@ -623,7 +693,7 @@ func valueConsumer() consumer[ast.Value] {
 							}
 
 							nextOpType := operatorStack.peek().operatorType()
-							if nextOpType == mapLiteral || nextOpType == listLiteral || nextOpType == setLiteral || nextOpType == function || nextOpType == separator || nextOpType == colon {
+							if nextOpType == mapLiteral || nextOpType == structLiteral || nextOpType == listLiteral || nextOpType == setLiteral || nextOpType == function || nextOpType == separator || nextOpType == colon {
 								break
 							}
 
@@ -645,7 +715,7 @@ func valueConsumer() consumer[ast.Value] {
 							}
 
 							nextOpType := operatorStack.peek().operatorType()
-							if nextOpType == mapLiteral || nextOpType == separator {
+							if nextOpType == mapLiteral || nextOpType == structLiteral || nextOpType == separator {
 								break
 							}
 
@@ -774,6 +844,10 @@ func valueConsumer() consumer[ast.Value] {
 				handle(
 					skip(stringConsumer("{")),
 					func(_ void) error {
+						if lastHandled.isValue() {
+							return handleOperator(new(structLiteralOperator))
+						}
+
 						return handleOperator(new(mapLiteralOperator))
 					},
 				),
@@ -781,18 +855,21 @@ func valueConsumer() consumer[ast.Value] {
 					skip(stringConsumer("}")),
 					func(_ void) error {
 						entryCount := 0
-						if !lastHandled.isOperatorOfType(mapLiteral) {
-							if operatorStack.pop() != colonOperator {
-								return errors.New("expected colon")
-							}
-
-							entryCount = 1
-						}
-
 						for true {
 							if op, ok := operatorStack.peek().(*mapLiteralOperator); ok {
 								op.numEntries = entryCount
 								return addOperatorToValueStack(operatorStack.pop())
+							}
+
+							if op, ok := operatorStack.peek().(*structLiteralOperator); ok {
+								op.numProperties = entryCount
+								return addOperatorToValueStack(operatorStack.pop())
+							}
+
+							if operatorStack.peek() == colonOperator {
+								operatorStack.pop()
+								entryCount++
+								continue
 							}
 
 							if operatorStack.peek() == separatorOperator {
@@ -866,6 +943,7 @@ func valueConsumer() consumer[ast.Value] {
 					first(
 						mapResultToConstant(stringConsumer("*"), multiplyOperator),
 						mapResultToConstant(stringConsumer("/"), divideOperator),
+						mapResultToConstant(stringConsumer("%"), moduloOperator),
 						mapResultToConstant(stringConsumer("+"), addOperator),
 						mapResultToConstant(stringConsumer("-"), subtractOperator),
 						mapResultToConstant(stringConsumer("."), propertyOperator),
