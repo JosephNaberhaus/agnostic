@@ -7,18 +7,17 @@ import (
 	"github.com/JosephNaberhaus/agnostic/ast"
 )
 
-// TODO rename
-func Test(rawText string) (ast.Module, error) {
+func Parse(rawText string) (ast.Module, []TokenMeta, error) {
 	r := newRunes(rawText)
 
 	var module ast.Module
 
 	newR, _, err := inOrder(
 		anyWhitespaceConsumer(),
-		skip(stringConsumer("module")),
+		meta(skip(stringConsumer("module")), TokenKind_keyword),
 		allWhitespaceConsumer(),
 		handleNoError(
-			alphaConsumer(),
+			meta(alphaConsumer(), TokenKind_module),
 			func(name string) {
 				module.Name = name
 			},
@@ -47,14 +46,14 @@ func Test(rawText string) (ast.Module, error) {
 		)),
 	)(r)
 	if err != nil {
-		return ast.Module{}, contextualize(err, []rune(rawText))
+		return ast.Module{}, newR.tokens, contextualize(err, []rune(rawText))
 	}
 
 	if newR.isNotEmpty() {
-		return ast.Module{}, contextualize(createError(newR, "expected end of module"), []rune(rawText))
+		return ast.Module{}, newR.tokens, contextualize(createError(newR, "expected end of module"), []rune(rawText))
 	}
 
-	return module, nil
+	return module, newR.tokens, nil
 }
 
 func constantDefConsumer() consumer[ast.ConstantDef] {
@@ -63,7 +62,7 @@ func constantDefConsumer() consumer[ast.ConstantDef] {
 		&result,
 		inOrder(
 			anyWhitespaceConsumer(),
-			skip(stringConsumer("const")),
+			meta(skip(stringConsumer("const")), TokenKind_keyword),
 			allWhitespaceConsumer(),
 			handleNoError(
 				alphaConsumer(),
