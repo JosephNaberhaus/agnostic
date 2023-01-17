@@ -210,7 +210,7 @@ func ifConsumer() consumer[ast.If] {
 		&result,
 		inOrder(
 			anyWhitespaceConsumer(),
-			skip(stringConsumer("if")),
+			meta(skip(stringConsumer("if")), TokenKind_keyword),
 			anyWhitespaceConsumer(),
 			skip(stringConsumer("(")),
 			anyWhitespaceConsumer(),
@@ -365,7 +365,7 @@ func forConsumer() consumer[ast.For] {
 		&result,
 		inOrder(
 			anyWhitespaceConsumer(),
-			skip(stringConsumer("for")),
+			meta(skip(stringConsumer("for")), TokenKind_keyword),
 			anyWhitespaceConsumer(),
 			skip(stringConsumer("(")),
 			anyWhitespaceConsumer(),
@@ -422,7 +422,7 @@ func forInConsumer() consumer[ast.ForIn] {
 		&result,
 		inOrder(
 			anyWhitespaceConsumer(),
-			skip(stringConsumer("for")),
+			meta(skip(stringConsumer("for")), TokenKind_keyword),
 			anyWhitespaceConsumer(),
 			skip(stringConsumer("(")),
 			anyWhitespaceConsumer(),

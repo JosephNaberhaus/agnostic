@@ -8,18 +8,18 @@ func typeConsumer() consumer[ast.Type] {
 		castToType(listConsumer()),
 		castToType(mapConsumer()),
 		castToType(setConsumer()),
-		castToType(modelConsumer()),
+		meta(castToType(modelConsumer()), TokenKind_type),
 	)
 }
 
 func primitiveConsumer() consumer[ast.Primitive] {
-	return first(
+	return meta(first(
 		mapResultToConstant(stringConsumer("bool"), ast.Boolean),
 		mapResultToConstant(stringConsumer("int"), ast.Int),
 		mapResultToConstant(stringConsumer("rune"), ast.Rune),
 		mapResultToConstant(stringConsumer("string"), ast.String),
 		mapResultToConstant(stringConsumer("void"), ast.Void),
-	)
+	), TokenKind_keyword)
 }
 
 func modelConsumer() consumer[ast.Model] {

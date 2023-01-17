@@ -16,7 +16,7 @@ func modelDefConsumer() consumer[ast.ModelDef] {
 					// TODO: use this
 				},
 			)),
-			skip(stringConsumer("model")),
+			meta(skip(stringConsumer("model")), TokenKind_keyword),
 			allWhitespaceConsumer(),
 			handleNoError(
 				alphaConsumer(),
@@ -163,7 +163,7 @@ func functionDefConsumer() consumer[ast.FunctionDef] {
 		inOrder(
 			anyWhitespaceConsumer(),
 			handleNoError(
-				alphaConsumer(),
+				meta(alphaConsumer(), TokenKind_function),
 				func(name string) {
 					result.Name = name
 				},
