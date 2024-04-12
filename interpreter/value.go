@@ -60,6 +60,7 @@ func NewModel(definition *code.ModelDef) Value {
 	value := new(Model)
 
 	for _, field := range definition.Fields {
+		// TODO zero value
 		value.Properties[field.Name] = Value{}
 	}
 

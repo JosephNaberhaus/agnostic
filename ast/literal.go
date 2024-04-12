@@ -5,6 +5,7 @@ package ast
 // Literal Int32
 
 type LiteralInt struct {
+	Meta
 	Value int64
 }
 
@@ -15,6 +16,7 @@ func (l LiteralInt) isConstantValue() {}
 // Literal Rune
 
 type LiteralRune struct {
+	Meta
 	Value rune
 }
 
@@ -25,6 +27,7 @@ func (l LiteralRune) isConstantValue() {}
 // Literal String
 
 type LiteralString struct {
+	Meta
 	Value string
 }
 
@@ -35,6 +38,7 @@ func (l LiteralString) isConstantValue() {}
 // Literal Bool
 
 type LiteralBool struct {
+	Meta
 	Value bool
 }
 
@@ -45,6 +49,7 @@ func (l LiteralBool) isConstantValue() {}
 // Literal List
 
 type LiteralList struct {
+	Meta
 	Items []Value
 }
 
@@ -55,10 +60,12 @@ func (l LiteralList) isConstantValue() {}
 // Literal Map
 
 type KeyValue struct {
+	Meta
 	Key, Value Value
 }
 
 type LiteralMap struct {
+	Meta
 	Entries []KeyValue
 }
 
@@ -69,6 +76,7 @@ func (l LiteralMap) isConstantValue() {}
 // Literal Set
 
 type LiteralSet struct {
+	Meta
 	Items []Value
 }
 
@@ -79,6 +87,7 @@ func (l LiteralSet) isConstantValue() {}
 // Empty List
 
 type EmptyList struct {
+	Meta
 	Type Type
 }
 
@@ -89,6 +98,7 @@ func (e EmptyList) isConstantValue() {}
 // Empty Set
 
 type EmptySet struct {
+	Meta
 	Type Type
 }
 
@@ -99,11 +109,13 @@ func (e EmptySet) isConstantValue() {}
 // LiteralStruct
 
 type LiteralProperty struct {
+	Meta
 	Name  string
 	Value Value
 }
 
 type LiteralStruct struct {
+	Meta
 	Name       string
 	Properties []LiteralProperty
 }

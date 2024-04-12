@@ -13,6 +13,7 @@ const (
 )
 
 type UnaryOperation struct {
+	Meta
 	Value    Value
 	Operator UnaryOperator
 }
@@ -40,6 +41,7 @@ const (
 )
 
 type BinaryOperation struct {
+	Meta
 	Left, Right Value
 	Operator    BinaryOperator
 }

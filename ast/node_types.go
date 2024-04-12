@@ -1,4 +1,4 @@
-//go:generate go run ../tool/mapper_generator -exclude=optional.go
+//go:generate go run ../tool/mapper_generator -exclude=optional.go,meta.go
 
 package ast
 
