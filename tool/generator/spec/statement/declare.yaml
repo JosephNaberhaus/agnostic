@@ -1,0 +1,7 @@
+name: Declare
+types:
+  - Statement
+  - Definition
+properties:
+  name: string
+  value: Value

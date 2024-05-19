@@ -1,0 +1,6 @@
+name: LiteralInt
+types:
+  - ConstantValue
+  - Value
+properties:
+  value: int64

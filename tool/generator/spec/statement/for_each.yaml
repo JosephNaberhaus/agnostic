@@ -1,0 +1,8 @@
+name: ForEach
+types:
+  - Definition
+  - Statement
+properties:
+  iterable: Value
+  itemName: string
+  block: Block

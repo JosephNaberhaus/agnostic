@@ -1,0 +1,6 @@
+name: Push
+types:
+  - Statement
+properties:
+  list: Value
+  value: Value

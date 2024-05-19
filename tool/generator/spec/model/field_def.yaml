@@ -1,0 +1,6 @@
+name: FieldDef
+types:
+  - Definition
+properties:
+  name: string
+  type: Type

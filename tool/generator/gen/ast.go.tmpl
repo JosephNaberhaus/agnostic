@@ -1,0 +1,14 @@
+package ast
+
+{{ range $spec := . }}
+type {{ .Name }} struct {
+{{ range $key, $value := .Properties }}
+	{{ title $key }} {{ $value }}
+{{ end }}
+}
+
+{{ range .Types }}
+func (_ {{ $spec.Name }}) is{{ . }}() {}
+{{ end }}
+
+{{ end }}

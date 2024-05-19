@@ -1,0 +1,6 @@
+name: EmptyList
+types:
+  - ConstantValue
+  - Value
+properties:
+  type: Type

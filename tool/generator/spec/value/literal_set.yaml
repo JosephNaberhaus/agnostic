@@ -1,0 +1,6 @@
+name: LiteralSet
+types:
+  - ConstantValue
+  - Value
+properties:
+  values: "[]Value"

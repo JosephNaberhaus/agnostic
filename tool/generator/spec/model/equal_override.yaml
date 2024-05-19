@@ -1,0 +1,5 @@
+name: EqualOverride
+properties:
+  otherName: string
+  block: Block
+  

@@ -1,0 +1,6 @@
+name: Conditional
+types:
+  - Statement
+properties:
+  ifs: "[]If"
+  else: Optional[Block]

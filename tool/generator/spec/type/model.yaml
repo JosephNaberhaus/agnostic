@@ -1,0 +1,5 @@
+name: Model
+types:
+  - Type
+properties:
+  name: string

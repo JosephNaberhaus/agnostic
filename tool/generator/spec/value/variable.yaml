@@ -1,0 +1,6 @@
+name: Variable
+types:
+  - Assignable
+  - Value
+properties:
+  name: string

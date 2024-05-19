@@ -1,0 +1,6 @@
+name: LiteralRune
+types:
+  - ConstantValue
+  - Value
+properties:
+  value: rune

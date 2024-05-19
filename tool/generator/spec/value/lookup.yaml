@@ -1,0 +1,6 @@
+name: Lookup
+types:
+  - Value
+properties:
+  from: Value
+  key: Value

@@ -1,0 +1,8 @@
+name: FunctionDef
+types:
+  - Callable
+properties:
+  name: string
+  arguments: "[]ArgumentDef"
+  block: Block
+  returnTYpe: Type

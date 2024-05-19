@@ -1,0 +1,6 @@
+name: AddToSet
+types:
+  - Statement
+properties:
+  set: Value
+  value: Value

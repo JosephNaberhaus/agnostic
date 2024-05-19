@@ -1,0 +1,6 @@
+name: "Null"
+types:
+  - ConstantValue
+  - Value
+properties:
+  type: Type

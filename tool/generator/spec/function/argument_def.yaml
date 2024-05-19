@@ -1,0 +1,6 @@
+name: ArgumentDef
+types:
+  - Definition
+properties:
+  name: string
+  type: Type

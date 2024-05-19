@@ -1,0 +1,6 @@
+name: ConstantDef
+types:
+  - Definition
+properties:
+  name: string
+  value: ConstantValue

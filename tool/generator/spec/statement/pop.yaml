@@ -1,0 +1,6 @@
+name: Pop
+types:
+  - Statement
+  - Value
+properties:
+  list: Value

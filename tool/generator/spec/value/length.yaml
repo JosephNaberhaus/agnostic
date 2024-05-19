@@ -1,0 +1,5 @@
+name: Length
+types:
+  - Value
+properties:
+  of: Value

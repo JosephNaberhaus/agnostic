@@ -1,0 +1,6 @@
+name: LiteralMap
+types:
+  - ConstantValue
+  - Value
+properties:
+  keys: "[]KeyValue"

@@ -1,0 +1,7 @@
+name: Property
+types:
+  - Assignable
+  - Value
+properties:
+  of: Value
+  name: string

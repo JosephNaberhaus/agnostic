@@ -1,0 +1,6 @@
+name: LiteralBool
+types:
+  - ConstantValue
+  - Value
+properties:
+  value: bool

@@ -1,0 +1,5 @@
+name: Set
+types:
+  - Type
+properties:
+  item: Type

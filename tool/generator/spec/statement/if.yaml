@@ -1,0 +1,4 @@
+name: If
+properties:
+  condition: Value
+  block: Block

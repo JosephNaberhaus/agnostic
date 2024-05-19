@@ -1,0 +1,6 @@
+name: LiteralString
+types:
+  - ConstantValue
+  - Value
+properties:
+  value: string

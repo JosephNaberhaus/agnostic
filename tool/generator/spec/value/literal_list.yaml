@@ -1,0 +1,6 @@
+name: LiteralList
+types:
+  - ConstantValue
+  - Value
+properties:
+  values: "[]Value"

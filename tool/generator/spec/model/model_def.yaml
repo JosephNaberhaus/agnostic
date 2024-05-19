@@ -1,0 +1,7 @@
+name: ModelDef
+properties:
+  name: string
+  fields: "[]FieldDef"
+  methods: "[]FunctionDef"
+  equalOverride: EqualOverride
+  hashOverride: HashOverride

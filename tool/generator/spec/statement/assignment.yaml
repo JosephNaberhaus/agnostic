@@ -1,0 +1,6 @@
+name: Assignment
+types:
+  - Statement
+properties:
+  to: Value
+  from: Value

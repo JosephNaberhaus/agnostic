@@ -1,0 +1,6 @@
+name: Module
+properties:
+  name: string
+  models: "[]ModelDef"
+  functions: "[]FunctionDef"
+  constants: "[]ConstantDef"
