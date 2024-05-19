@@ -8,30 +8,37 @@ type Node interface {
 	isNode()
 }
 
-type Callable interface {
-	isCallable()
-}
-
-type Assignable interface {
-	isAssignable()
-}
-
 type Statement interface {
+	// isStatement is just a interface guard to restrict what can be used as a Statement.
 	isStatement()
 }
 
 type Definition interface {
+	// isDefinition is just a interface guard to restrict what can be used as a Definition.
 	isDefinition()
 }
 
 type Type interface {
+	// isType is just a interface guard to restrict what can be used as a Type.
 	isType()
 }
 
 type Value interface {
+	// isValue is just a interface guard to restrict what can be used as a Value.
 	isValue()
 }
 
 type ConstantValue interface {
+	// isConstantValue is just a interface guard to restrict what can be used as a ConstantValue.
 	isConstantValue()
+}
+
+type Callable interface {
+	// isCallable is just a interface guard to restrict what can be used as a Callable.
+	isCallable()
+}
+
+type Assignable interface {
+	// isAssignable is just a interface guard to restrict what can be used as a Assignable.
+	isAssignable()
 }
