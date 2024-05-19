@@ -8,7 +8,7 @@ This package contains a tool used to generate the [ast](../../ast) and [code](..
 - Code nodes are a compiled version of a valid AST.
     - They should never be instantiated manually.
     - They contain metadata about the node that the language-specific generators can use.
-    - Uses pointerfor everything since the metadata properties often create reference loops.
+    - Their properties are all pointers because the metadata properties often create reference loops.
 
 ## Updating the AST
 
