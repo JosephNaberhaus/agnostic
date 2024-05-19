@@ -1,6 +1,6 @@
-name: "Null"
+name: Nil
 types:
   - ConstantValue
   - Value
 properties:
-  type: Type
+  type: ~Type

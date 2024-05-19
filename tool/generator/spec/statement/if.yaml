@@ -1,4 +1,4 @@
 name: If
 properties:
-  condition: Value
+  condition: ~Value
   block: Block

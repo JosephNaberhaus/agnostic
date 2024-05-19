@@ -1,4 +1,4 @@
 name: KeyValue
 properties:
-  key: Value
-  value: Value
+  key: ~Value
+  value: ~Value

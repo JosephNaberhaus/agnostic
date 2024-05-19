@@ -4,9 +4,9 @@
 package code
 
 type AddToSet struct {
-	Set *Value
+	Set Value
 
-	Value *Value
+	Value Value
 
 	AddToSetMetadata
 }
@@ -16,9 +16,9 @@ func (AddToSet) isNode() {}
 func (AddToSet) isStatement() {}
 
 type ArgumentDef struct {
-	Name *string
+	Name string
 
-	Type *Type
+	Type Type
 
 	ArgumentDefMetadata
 }
@@ -28,9 +28,9 @@ func (ArgumentDef) isNode() {}
 func (ArgumentDef) isDefinition() {}
 
 type Assignment struct {
-	From *Value
+	From Value
 
-	To *Value
+	To Value
 
 	AssignmentMetadata
 }
@@ -66,7 +66,7 @@ func (Break) isStatement() {}
 type Call struct {
 	Arguments []Value
 
-	Function *Callable
+	Function Callable
 
 	CallMetadata
 }
@@ -80,7 +80,7 @@ func (Call) isValue() {}
 type Conditional struct {
 	Else *Block
 
-	Ifs []If
+	Ifs []*If
 
 	ConditionalMetadata
 }
@@ -90,9 +90,9 @@ func (Conditional) isNode() {}
 func (Conditional) isStatement() {}
 
 type ConstantDef struct {
-	Name *string
+	Name string
 
-	Value *ConstantValue
+	Value ConstantValue
 
 	ConstantDefMetadata
 }
@@ -110,9 +110,9 @@ func (Continue) isNode() {}
 func (Continue) isStatement() {}
 
 type Declare struct {
-	Name *string
+	Name string
 
-	Value *Value
+	Value Value
 
 	DeclareMetadata
 }
@@ -124,7 +124,7 @@ func (Declare) isStatement() {}
 func (Declare) isDefinition() {}
 
 type EmptyList struct {
-	Type *Type
+	Type Type
 
 	EmptyListMetadata
 }
@@ -138,7 +138,7 @@ func (EmptyList) isValue() {}
 type EqualOverride struct {
 	Block *Block
 
-	OtherName *string
+	OtherName string
 
 	EqualOverrideMetadata
 }
@@ -146,9 +146,9 @@ type EqualOverride struct {
 func (EqualOverride) isNode() {}
 
 type FieldDef struct {
-	Name *string
+	Name string
 
-	Type *Type
+	Type Type
 
 	FieldDefMetadata
 }
@@ -158,13 +158,13 @@ func (FieldDef) isNode() {}
 func (FieldDef) isDefinition() {}
 
 type For struct {
-	AfterEach *Statement
+	AfterEach Statement
 
 	Block *Block
 
-	Condition *Value
+	Condition Value
 
-	Initialization *Statement
+	Initialization Statement
 
 	ForMetadata
 }
@@ -176,9 +176,9 @@ func (For) isStatement() {}
 type ForEach struct {
 	Block *Block
 
-	ItemName *string
+	ItemName string
 
-	Iterable *Value
+	Iterable Value
 
 	ForEachMetadata
 }
@@ -190,13 +190,13 @@ func (ForEach) isDefinition() {}
 func (ForEach) isStatement() {}
 
 type FunctionDef struct {
-	Arguments []ArgumentDef
+	Arguments []*ArgumentDef
 
 	Block *Block
 
-	Name *string
+	Name string
 
-	ReturnTYpe *Type
+	ReturnType Type
 
 	FunctionDefMetadata
 }
@@ -216,7 +216,7 @@ func (HashOverride) isNode() {}
 type If struct {
 	Block *Block
 
-	Condition *Value
+	Condition Value
 
 	IfMetadata
 }
@@ -232,9 +232,9 @@ func (Int64) isNode() {}
 func (Int64) isType() {}
 
 type KeyValue struct {
-	Key *Value
+	Key Value
 
-	Value *Value
+	Value Value
 
 	KeyValueMetadata
 }
@@ -242,7 +242,7 @@ type KeyValue struct {
 func (KeyValue) isNode() {}
 
 type Length struct {
-	Of *Value
+	Of Value
 
 	LengthMetadata
 }
@@ -252,7 +252,7 @@ func (Length) isNode() {}
 func (Length) isValue() {}
 
 type List struct {
-	Item *Type
+	Item Type
 
 	ListMetadata
 }
@@ -262,7 +262,7 @@ func (List) isNode() {}
 func (List) isType() {}
 
 type LiteralBool struct {
-	Value *bool
+	Value bool
 
 	LiteralBoolMetadata
 }
@@ -273,17 +273,17 @@ func (LiteralBool) isConstantValue() {}
 
 func (LiteralBool) isValue() {}
 
-type LiteralInt struct {
-	Value *int64
+type LiteralInt64 struct {
+	Value int64
 
-	LiteralIntMetadata
+	LiteralInt64Metadata
 }
 
-func (LiteralInt) isNode() {}
+func (LiteralInt64) isNode() {}
 
-func (LiteralInt) isConstantValue() {}
+func (LiteralInt64) isConstantValue() {}
 
-func (LiteralInt) isValue() {}
+func (LiteralInt64) isValue() {}
 
 type LiteralList struct {
 	Values []Value
@@ -298,7 +298,7 @@ func (LiteralList) isConstantValue() {}
 func (LiteralList) isValue() {}
 
 type LiteralMap struct {
-	Keys []KeyValue
+	Values []*KeyValue
 
 	LiteralMapMetadata
 }
@@ -310,7 +310,7 @@ func (LiteralMap) isConstantValue() {}
 func (LiteralMap) isValue() {}
 
 type LiteralRune struct {
-	Value *rune
+	Value rune
 
 	LiteralRuneMetadata
 }
@@ -334,7 +334,7 @@ func (LiteralSet) isConstantValue() {}
 func (LiteralSet) isValue() {}
 
 type LiteralString struct {
-	Value *string
+	Value string
 
 	LiteralStringMetadata
 }
@@ -346,9 +346,9 @@ func (LiteralString) isConstantValue() {}
 func (LiteralString) isValue() {}
 
 type Lookup struct {
-	From *Value
+	From Value
 
-	Key *Value
+	Key Value
 
 	LookupMetadata
 }
@@ -358,9 +358,9 @@ func (Lookup) isNode() {}
 func (Lookup) isValue() {}
 
 type Map struct {
-	Key *Type
+	Key Type
 
-	Value *Type
+	Value Type
 
 	MapMetadata
 }
@@ -370,7 +370,7 @@ func (Map) isNode() {}
 func (Map) isType() {}
 
 type Model struct {
-	Name *string
+	Name string
 
 	ModelMetadata
 }
@@ -382,13 +382,13 @@ func (Model) isType() {}
 type ModelDef struct {
 	EqualOverride *EqualOverride
 
-	Fields []FieldDef
+	Fields []*FieldDef
 
 	HashOverride *HashOverride
 
-	Methods []FunctionDef
+	Methods []*FunctionDef
 
-	Name *string
+	Name string
 
 	ModelDefMetadata
 }
@@ -396,13 +396,13 @@ type ModelDef struct {
 func (ModelDef) isNode() {}
 
 type Module struct {
-	Constants []ConstantDef
+	Constants []*ConstantDef
 
-	Functions []FunctionDef
+	Functions []*FunctionDef
 
-	Models []ModelDef
+	Models []*ModelDef
 
-	Name *string
+	Name string
 
 	ModuleMetadata
 }
@@ -419,20 +419,20 @@ func (New) isNode() {}
 
 func (New) isValue() {}
 
-type Null struct {
-	Type *Type
+type Nil struct {
+	Type Type
 
-	NullMetadata
+	NilMetadata
 }
 
-func (Null) isNode() {}
+func (Nil) isNode() {}
 
-func (Null) isConstantValue() {}
+func (Nil) isConstantValue() {}
 
-func (Null) isValue() {}
+func (Nil) isValue() {}
 
 type Pop struct {
-	List *Value
+	List Value
 
 	PopMetadata
 }
@@ -444,9 +444,9 @@ func (Pop) isStatement() {}
 func (Pop) isValue() {}
 
 type Property struct {
-	Name *string
+	Name string
 
-	Of *Value
+	Of Value
 
 	PropertyMetadata
 }
@@ -458,9 +458,9 @@ func (Property) isAssignable() {}
 func (Property) isValue() {}
 
 type Push struct {
-	List *Value
+	List Value
 
-	Value *Value
+	Value Value
 
 	PushMetadata
 }
@@ -470,7 +470,7 @@ func (Push) isNode() {}
 func (Push) isStatement() {}
 
 type Return struct {
-	Value *Value
+	Value Value
 
 	ReturnMetadata
 }
@@ -478,6 +478,14 @@ type Return struct {
 func (Return) isNode() {}
 
 func (Return) isStatement() {}
+
+type Root struct {
+	Modules []*Module
+
+	RootMetadata
+}
+
+func (Root) isNode() {}
 
 type Rune struct {
 	RuneMetadata
@@ -496,7 +504,7 @@ func (Self) isNode() {}
 func (Self) isValue() {}
 
 type Set struct {
-	Item *Type
+	Item Type
 
 	SetMetadata
 }
@@ -506,9 +514,9 @@ func (Set) isNode() {}
 func (Set) isType() {}
 
 type SetContains struct {
-	Set *Set
+	Set Value
 
-	Value *Value
+	Value Value
 
 	SetContainsMetadata
 }
@@ -526,7 +534,7 @@ func (String) isNode() {}
 func (String) isType() {}
 
 type Variable struct {
-	Name *string
+	Name string
 
 	VariableMetadata
 }

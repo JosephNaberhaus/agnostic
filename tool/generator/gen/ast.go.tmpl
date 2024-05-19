@@ -6,7 +6,7 @@ package ast
 {{ range $spec := . }}
 type {{ .Name }} struct {
 {{ range $key, $value := .Properties }}
-	{{ title $key }} {{ $value }}
+	{{ title $key }} {{ removeTypePrefix $value }}
 {{ end }}
 }
 

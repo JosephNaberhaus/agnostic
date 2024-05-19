@@ -3,4 +3,4 @@ types:
   - Definition
 properties:
   name: string
-  type: Type
+  type: ~Type

@@ -3,4 +3,4 @@ types:
   - ConstantValue
   - Value
 properties:
-  values: "[]Value"
+  values: "[]~Value"

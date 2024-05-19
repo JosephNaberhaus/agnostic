@@ -10,6 +10,8 @@ type Node interface {
 
 {{ range .NodeTypes }}
 type {{ . }} interface {
+	Node
+
 	// is{{ . }} is just a interface guard to restrict what can be used as a {{ . }}.
     is{{ . }}()
 }

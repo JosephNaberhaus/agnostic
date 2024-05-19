@@ -3,4 +3,4 @@ types:
   - ConstantValue
   - Value
 properties:
-  keys: "[]KeyValue"
+  values: "[]KeyValue"

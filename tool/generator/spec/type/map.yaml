@@ -2,5 +2,5 @@ name: Map
 types:
   - Type
 properties:
-  key: Type
-  value: Type
+  key: ~Type
+  value: ~Type

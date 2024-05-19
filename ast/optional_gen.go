@@ -15,8 +15,8 @@ func OptionalWithValue[T any](value T) Optional[T] {
 	}
 }
 
-func (o Optional[T]) Value() (T, bool) {
-	return o.value, o.set
+func (o Optional[T]) Value() T {
+	return o.value
 }
 
 func (o Optional[T]) IsSet() bool {

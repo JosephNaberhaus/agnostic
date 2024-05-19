@@ -2,5 +2,5 @@ name: AddToSet
 types:
   - Statement
 properties:
-  set: Value
-  value: Value
+  set: ~Value
+  value: ~Value

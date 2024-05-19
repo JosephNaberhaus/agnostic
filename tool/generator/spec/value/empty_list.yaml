@@ -3,4 +3,4 @@ types:
   - ConstantValue
   - Value
 properties:
-  type: Type
+  type: ~Type

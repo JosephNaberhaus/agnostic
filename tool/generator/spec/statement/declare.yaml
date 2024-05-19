@@ -4,4 +4,4 @@ types:
   - Definition
 properties:
   name: string
-  value: Value
+  value: ~Value

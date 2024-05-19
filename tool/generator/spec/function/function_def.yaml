@@ -5,4 +5,4 @@ properties:
   name: string
   arguments: "[]ArgumentDef"
   block: Block
-  returnTYpe: Type
+  returnType: ~Type

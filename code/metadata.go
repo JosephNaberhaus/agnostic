@@ -48,7 +48,7 @@ type ListMetadata struct{}
 
 type LiteralBoolMetadata struct{}
 
-type LiteralIntMetadata struct{}
+type LiteralInt64Metadata struct{}
 
 type LiteralListMetadata struct{}
 
@@ -72,7 +72,7 @@ type ModuleMetadata struct{}
 
 type NewMetadata struct{}
 
-type NullMetadata struct{}
+type NilMetadata struct{}
 
 type PopMetadata struct{}
 
@@ -81,6 +81,8 @@ type PropertyMetadata struct{}
 type PushMetadata struct{}
 
 type ReturnMetadata struct{}
+
+type RootMetadata struct{}
 
 type RuneMetadata struct{}
 

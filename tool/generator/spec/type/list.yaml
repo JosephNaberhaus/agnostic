@@ -2,4 +2,4 @@ name: List
 types:
   - Type
 properties:
-  item: Type
+  item: ~Type

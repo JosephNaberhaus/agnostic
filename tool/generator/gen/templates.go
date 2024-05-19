@@ -131,9 +131,10 @@ func executeTemplate(templateText, outputFile string, data any) error {
 
 	tmpl := template.New("template ")
 	tmpl.Funcs(template.FuncMap{
-		"makePointer":    makePointer,
-		"removeOptional": removeOptional,
-		"title":          title,
+		"makePointer":      makePointer,
+		"removeOptional":   removeOptional,
+		"removeTypePrefix": removeTypePrefix,
+		"title":            title,
 	})
 
 	tmpl, err = tmpl.Parse(templateText)

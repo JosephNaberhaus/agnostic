@@ -52,7 +52,7 @@ type NodeMapper[T any] interface {
 
 	MapLiteralBool(value LiteralBool) (T, error)
 
-	MapLiteralInt(value LiteralInt) (T, error)
+	MapLiteralInt64(value LiteralInt64) (T, error)
 
 	MapLiteralList(value LiteralList) (T, error)
 
@@ -76,7 +76,7 @@ type NodeMapper[T any] interface {
 
 	MapNew(value New) (T, error)
 
-	MapNull(value Null) (T, error)
+	MapNil(value Nil) (T, error)
 
 	MapPop(value Pop) (T, error)
 
@@ -85,6 +85,8 @@ type NodeMapper[T any] interface {
 	MapPush(value Push) (T, error)
 
 	MapReturn(value Return) (T, error)
+
+	MapRoot(value Root) (T, error)
 
 	MapRune(value Rune) (T, error)
 
@@ -176,8 +178,8 @@ func MapNode[T any](node Node, mapper NodeMapper[T]) (T, error) {
 	case LiteralBool:
 		return mapper.MapLiteralBool(value)
 
-	case LiteralInt:
-		return mapper.MapLiteralInt(value)
+	case LiteralInt64:
+		return mapper.MapLiteralInt64(value)
 
 	case LiteralList:
 		return mapper.MapLiteralList(value)
@@ -212,8 +214,8 @@ func MapNode[T any](node Node, mapper NodeMapper[T]) (T, error) {
 	case New:
 		return mapper.MapNew(value)
 
-	case Null:
-		return mapper.MapNull(value)
+	case Nil:
+		return mapper.MapNil(value)
 
 	case Pop:
 		return mapper.MapPop(value)
@@ -226,6 +228,9 @@ func MapNode[T any](node Node, mapper NodeMapper[T]) (T, error) {
 
 	case Return:
 		return mapper.MapReturn(value)
+
+	case Root:
+		return mapper.MapRoot(value)
 
 	case Rune:
 		return mapper.MapRune(value)
@@ -316,7 +321,7 @@ type NodeMapperNoError[T any] interface {
 
 	MapLiteralBool(value LiteralBool) T
 
-	MapLiteralInt(value LiteralInt) T
+	MapLiteralInt64(value LiteralInt64) T
 
 	MapLiteralList(value LiteralList) T
 
@@ -340,7 +345,7 @@ type NodeMapperNoError[T any] interface {
 
 	MapNew(value New) T
 
-	MapNull(value Null) T
+	MapNil(value Nil) T
 
 	MapPop(value Pop) T
 
@@ -349,6 +354,8 @@ type NodeMapperNoError[T any] interface {
 	MapPush(value Push) T
 
 	MapReturn(value Return) T
+
+	MapRoot(value Root) T
 
 	MapRune(value Rune) T
 
@@ -440,8 +447,8 @@ func MapNodeNoError[T any](node Node, mapper NodeMapperNoError[T]) T {
 	case LiteralBool:
 		return mapper.MapLiteralBool(value)
 
-	case LiteralInt:
-		return mapper.MapLiteralInt(value)
+	case LiteralInt64:
+		return mapper.MapLiteralInt64(value)
 
 	case LiteralList:
 		return mapper.MapLiteralList(value)
@@ -476,8 +483,8 @@ func MapNodeNoError[T any](node Node, mapper NodeMapperNoError[T]) T {
 	case New:
 		return mapper.MapNew(value)
 
-	case Null:
-		return mapper.MapNull(value)
+	case Nil:
+		return mapper.MapNil(value)
 
 	case Pop:
 		return mapper.MapPop(value)
@@ -490,6 +497,9 @@ func MapNodeNoError[T any](node Node, mapper NodeMapperNoError[T]) T {
 
 	case Return:
 		return mapper.MapReturn(value)
+
+	case Root:
+		return mapper.MapRoot(value)
 
 	case Rune:
 		return mapper.MapRune(value)
@@ -650,7 +660,7 @@ type ConstantValueMapper[T any] interface {
 
 	MapLiteralBool(value LiteralBool) (T, error)
 
-	MapLiteralInt(value LiteralInt) (T, error)
+	MapLiteralInt64(value LiteralInt64) (T, error)
 
 	MapLiteralList(value LiteralList) (T, error)
 
@@ -662,7 +672,7 @@ type ConstantValueMapper[T any] interface {
 
 	MapLiteralString(value LiteralString) (T, error)
 
-	MapNull(value Null) (T, error)
+	MapNil(value Nil) (T, error)
 }
 
 func MapConstantValue[T any](node ConstantValue, mapper ConstantValueMapper[T]) (T, error) {
@@ -674,8 +684,8 @@ func MapConstantValue[T any](node ConstantValue, mapper ConstantValueMapper[T]) 
 	case LiteralBool:
 		return mapper.MapLiteralBool(value)
 
-	case LiteralInt:
-		return mapper.MapLiteralInt(value)
+	case LiteralInt64:
+		return mapper.MapLiteralInt64(value)
 
 	case LiteralList:
 		return mapper.MapLiteralList(value)
@@ -692,8 +702,8 @@ func MapConstantValue[T any](node ConstantValue, mapper ConstantValueMapper[T]) 
 	case LiteralString:
 		return mapper.MapLiteralString(value)
 
-	case Null:
-		return mapper.MapNull(value)
+	case Nil:
+		return mapper.MapNil(value)
 
 	default:
 		panic("unreachable")
@@ -719,7 +729,7 @@ type ConstantValueMapperNoError[T any] interface {
 
 	MapLiteralBool(value LiteralBool) T
 
-	MapLiteralInt(value LiteralInt) T
+	MapLiteralInt64(value LiteralInt64) T
 
 	MapLiteralList(value LiteralList) T
 
@@ -731,7 +741,7 @@ type ConstantValueMapperNoError[T any] interface {
 
 	MapLiteralString(value LiteralString) T
 
-	MapNull(value Null) T
+	MapNil(value Nil) T
 }
 
 func MapConstantValueNoError[T any](node ConstantValue, mapper ConstantValueMapperNoError[T]) T {
@@ -743,8 +753,8 @@ func MapConstantValueNoError[T any](node ConstantValue, mapper ConstantValueMapp
 	case LiteralBool:
 		return mapper.MapLiteralBool(value)
 
-	case LiteralInt:
-		return mapper.MapLiteralInt(value)
+	case LiteralInt64:
+		return mapper.MapLiteralInt64(value)
 
 	case LiteralList:
 		return mapper.MapLiteralList(value)
@@ -761,8 +771,8 @@ func MapConstantValueNoError[T any](node ConstantValue, mapper ConstantValueMapp
 	case LiteralString:
 		return mapper.MapLiteralString(value)
 
-	case Null:
-		return mapper.MapNull(value)
+	case Nil:
+		return mapper.MapNil(value)
 
 	default:
 		panic("unreachable")
@@ -1180,7 +1190,7 @@ type ValueMapper[T any] interface {
 
 	MapLiteralBool(value LiteralBool) (T, error)
 
-	MapLiteralInt(value LiteralInt) (T, error)
+	MapLiteralInt64(value LiteralInt64) (T, error)
 
 	MapLiteralList(value LiteralList) (T, error)
 
@@ -1196,7 +1206,7 @@ type ValueMapper[T any] interface {
 
 	MapNew(value New) (T, error)
 
-	MapNull(value Null) (T, error)
+	MapNil(value Nil) (T, error)
 
 	MapPop(value Pop) (T, error)
 
@@ -1224,8 +1234,8 @@ func MapValue[T any](node Value, mapper ValueMapper[T]) (T, error) {
 	case LiteralBool:
 		return mapper.MapLiteralBool(value)
 
-	case LiteralInt:
-		return mapper.MapLiteralInt(value)
+	case LiteralInt64:
+		return mapper.MapLiteralInt64(value)
 
 	case LiteralList:
 		return mapper.MapLiteralList(value)
@@ -1248,8 +1258,8 @@ func MapValue[T any](node Value, mapper ValueMapper[T]) (T, error) {
 	case New:
 		return mapper.MapNew(value)
 
-	case Null:
-		return mapper.MapNull(value)
+	case Nil:
+		return mapper.MapNil(value)
 
 	case Pop:
 		return mapper.MapPop(value)
@@ -1294,7 +1304,7 @@ type ValueMapperNoError[T any] interface {
 
 	MapLiteralBool(value LiteralBool) T
 
-	MapLiteralInt(value LiteralInt) T
+	MapLiteralInt64(value LiteralInt64) T
 
 	MapLiteralList(value LiteralList) T
 
@@ -1310,7 +1320,7 @@ type ValueMapperNoError[T any] interface {
 
 	MapNew(value New) T
 
-	MapNull(value Null) T
+	MapNil(value Nil) T
 
 	MapPop(value Pop) T
 
@@ -1338,8 +1348,8 @@ func MapValueNoError[T any](node Value, mapper ValueMapperNoError[T]) T {
 	case LiteralBool:
 		return mapper.MapLiteralBool(value)
 
-	case LiteralInt:
-		return mapper.MapLiteralInt(value)
+	case LiteralInt64:
+		return mapper.MapLiteralInt64(value)
 
 	case LiteralList:
 		return mapper.MapLiteralList(value)
@@ -1362,8 +1372,8 @@ func MapValueNoError[T any](node Value, mapper ValueMapperNoError[T]) T {
 	case New:
 		return mapper.MapNew(value)
 
-	case Null:
-		return mapper.MapNull(value)
+	case Nil:
+		return mapper.MapNil(value)
 
 	case Pop:
 		return mapper.MapPop(value)

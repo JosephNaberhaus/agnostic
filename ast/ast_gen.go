@@ -185,7 +185,7 @@ type FunctionDef struct {
 
 	Name string
 
-	ReturnTYpe Type
+	ReturnType Type
 }
 
 func (FunctionDef) isNode() {}
@@ -253,17 +253,17 @@ func (LiteralBool) isConstantValue() {}
 // isValue is just a inteface guard to restrict what can be used as a Value.
 func (LiteralBool) isValue() {}
 
-type LiteralInt struct {
+type LiteralInt64 struct {
 	Value int64
 }
 
-func (LiteralInt) isNode() {}
+func (LiteralInt64) isNode() {}
 
 // isConstantValue is just a inteface guard to restrict what can be used as a ConstantValue.
-func (LiteralInt) isConstantValue() {}
+func (LiteralInt64) isConstantValue() {}
 
 // isValue is just a inteface guard to restrict what can be used as a Value.
-func (LiteralInt) isValue() {}
+func (LiteralInt64) isValue() {}
 
 type LiteralList struct {
 	Values []Value
@@ -278,7 +278,7 @@ func (LiteralList) isConstantValue() {}
 func (LiteralList) isValue() {}
 
 type LiteralMap struct {
-	Keys []KeyValue
+	Values []KeyValue
 }
 
 func (LiteralMap) isNode() {}
@@ -391,17 +391,17 @@ func (New) isNode() {}
 // isValue is just a inteface guard to restrict what can be used as a Value.
 func (New) isValue() {}
 
-type Null struct {
+type Nil struct {
 	Type Type
 }
 
-func (Null) isNode() {}
+func (Nil) isNode() {}
 
 // isConstantValue is just a inteface guard to restrict what can be used as a ConstantValue.
-func (Null) isConstantValue() {}
+func (Nil) isConstantValue() {}
 
 // isValue is just a inteface guard to restrict what can be used as a Value.
-func (Null) isValue() {}
+func (Nil) isValue() {}
 
 type Pop struct {
 	List Value
@@ -449,6 +449,12 @@ func (Return) isNode() {}
 // isStatement is just a inteface guard to restrict what can be used as a Statement.
 func (Return) isStatement() {}
 
+type Root struct {
+	Modules []Module
+}
+
+func (Root) isNode() {}
+
 type Rune struct {
 }
 
@@ -475,7 +481,7 @@ func (Set) isNode() {}
 func (Set) isType() {}
 
 type SetContains struct {
-	Set Set
+	Set Value
 
 	Value Value
 }

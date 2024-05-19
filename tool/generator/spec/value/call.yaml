@@ -3,5 +3,5 @@ types:
   - Statement
   - Value
 properties:
-  function: Callable
-  arguments: "[]Value"
+  function: ~Callable
+  arguments: "[]~Value"

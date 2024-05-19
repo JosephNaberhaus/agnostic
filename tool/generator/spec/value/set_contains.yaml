@@ -2,5 +2,5 @@ name: SetContains
 types:
   - Value
 properties:
-  set: Set
-  value: Value
+  set: ~Value
+  value: ~Value

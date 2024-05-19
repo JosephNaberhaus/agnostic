@@ -6,7 +6,7 @@ package code
 {{ range $spec := . }}
 type {{ .Name }} struct {
 {{ range $key, $value := .Properties }}
-	{{ title $key }} {{ $value | removeOptional | makePointer }}
+	{{ title $key }} {{ $value | removeOptional | makePointer | removeTypePrefix }}
 {{ end }}
 
     {{ .Name }}Metadata

@@ -3,5 +3,5 @@ types:
   - Assignable
   - Value
 properties:
-  of: Value
+  of: ~Value
   name: string

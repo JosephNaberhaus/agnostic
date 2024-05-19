@@ -3,4 +3,4 @@ types:
   - Statement
   - Value
 properties:
-  list: Value
+  list: ~Value

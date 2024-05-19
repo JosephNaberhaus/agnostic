@@ -1,4 +1,4 @@
-name: LiteralInt
+name: LiteralInt64
 types:
   - ConstantValue
   - Value

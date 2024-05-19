@@ -3,4 +3,4 @@ types:
   - Definition
 properties:
   name: string
-  value: ConstantValue
+  value: ~ConstantValue

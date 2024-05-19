@@ -2,5 +2,5 @@ name: Assignment
 types:
   - Statement
 properties:
-  to: Value
-  from: Value
+  to: ~Value
+  from: ~Value

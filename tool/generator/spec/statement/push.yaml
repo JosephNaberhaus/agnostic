@@ -2,5 +2,5 @@ name: Push
 types:
   - Statement
 properties:
-  list: Value
-  value: Value
+  list: ~Value
+  value: ~Value

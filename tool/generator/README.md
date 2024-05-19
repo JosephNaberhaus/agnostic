@@ -1,4 +1,4 @@
-# Node Generator
+# Generator
 
 This package contains a tool used to generate the [ast](../../ast) and [code](../../code) packages.
 
@@ -35,8 +35,8 @@ properties:
     key1: string
     # The value can be the name of another node in the spec.
     key2: AnotherNode
-    # Or it can be the name of any type in the spec.
-    key3: Type
+    # Or it can be the name of any type in the spec prefixed by a tilde.
+    key3: ~Type
     # Brackets notate a list. Note that you need to wrap this string in quotations to prevent YAML from misparsing it.
     key2: "[]int64"
     # Optional is used for something that might not be present.

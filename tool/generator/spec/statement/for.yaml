@@ -2,8 +2,8 @@ name: For
 types:
   - Statement
 properties:
-  initialization: Optional[Statement]
-  condition: Value
-  afterEach: Optional[Statement]
+  initialization: Optional[~Statement]
+  condition: ~Value
+  afterEach: Optional[~Statement]
   block: Block
   

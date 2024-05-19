@@ -2,4 +2,4 @@ name: Return
 types:
   - Statement
 properties:
-  value: Value
+  value: ~Value

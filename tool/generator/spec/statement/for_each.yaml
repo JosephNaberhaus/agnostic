@@ -3,6 +3,6 @@ types:
   - Definition
   - Statement
 properties:
-  iterable: Value
+  iterable: ~Value
   itemName: string
   block: Block
