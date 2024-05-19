@@ -1,10 +1,12 @@
-package ast
+package code
 
 {{ range $spec := . }}
 type {{ .Name }} struct {
 {{ range $key, $value := .Properties }}
 	{{ title $key }} {{ $value }}
 {{ end }}
+
+    {{ .Name }}Metadata
 }
 
 {{ range .Types }}

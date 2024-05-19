@@ -1,5 +1,13 @@
-package ast
+package code
 
+
+type ConstantValue interface {
+    isConstantValue()
+}
+
+type Callable interface {
+    isCallable()
+}
 
 type Assignable interface {
     isAssignable()
@@ -19,12 +27,4 @@ type Type interface {
 
 type Value interface {
     isValue()
-}
-
-type ConstantValue interface {
-    isConstantValue()
-}
-
-type Callable interface {
-    isCallable()
 }

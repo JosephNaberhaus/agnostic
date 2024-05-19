@@ -15,13 +15,20 @@ const (
 	astPackage   = "ast"
 	astDirectory = "../../ast"
 
+	codePackage   = "code"
+	codeDirectory = "../../code"
+
 	astFilename      = "ast_gen.go"
+	codeFilename     = "code_gen.go"
 	nodeTypeFilename = "node_type_gen.go"
 	optionalFilename = "optional_gen.go"
 )
 
 //go:embed ast.go.tmpl
 var astTemplate string
+
+//go:embed code.go.tmpl
+var codeTemplate string
 
 //go:embed node_types.go.tmpl
 var nodeTypesTemplate string
@@ -41,7 +48,27 @@ func WriteAST(specs []model.Spec) error {
 		return err
 	}
 
-	err = writeOptional("ast", astDirectory)
+	err = writeOptional(astPackage, astDirectory)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func WriteCode(specs []model.Spec) error {
+	codeFile := filepath.Join(codeDirectory, codeFilename)
+	err := executeTemplate(codeTemplate, codeFile, specs)
+	if err != nil {
+		return err
+	}
+
+	err = writeNodeTypes(specs, codePackage, codeDirectory)
+	if err != nil {
+		return err
+	}
+
+	err = writeOptional(codePackage, codeDirectory)
 	if err != nil {
 		return err
 	}
