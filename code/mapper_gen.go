@@ -537,6 +537,272 @@ func MapEachNodeNoError[T any](nodes []Node, mapper NodeMapperNoError[T]) []T {
 	return results
 }
 
+type NodeMapperOnlyError interface {
+	MapAddToSet(value AddToSet) error
+
+	MapArgumentDef(value ArgumentDef) error
+
+	MapAssignment(value Assignment) error
+
+	MapBlock(value Block) error
+
+	MapBool(value Bool) error
+
+	MapBreak(value Break) error
+
+	MapCall(value Call) error
+
+	MapConditional(value Conditional) error
+
+	MapConstantDef(value ConstantDef) error
+
+	MapContinue(value Continue) error
+
+	MapDeclare(value Declare) error
+
+	MapEmptyList(value EmptyList) error
+
+	MapEqualOverride(value EqualOverride) error
+
+	MapFieldDef(value FieldDef) error
+
+	MapFor(value For) error
+
+	MapForEach(value ForEach) error
+
+	MapFunctionDef(value FunctionDef) error
+
+	MapHashOverride(value HashOverride) error
+
+	MapIf(value If) error
+
+	MapInt64(value Int64) error
+
+	MapKeyValue(value KeyValue) error
+
+	MapLength(value Length) error
+
+	MapList(value List) error
+
+	MapLiteralBool(value LiteralBool) error
+
+	MapLiteralInt64(value LiteralInt64) error
+
+	MapLiteralList(value LiteralList) error
+
+	MapLiteralMap(value LiteralMap) error
+
+	MapLiteralRune(value LiteralRune) error
+
+	MapLiteralSet(value LiteralSet) error
+
+	MapLiteralString(value LiteralString) error
+
+	MapLookup(value Lookup) error
+
+	MapMap(value Map) error
+
+	MapModel(value Model) error
+
+	MapModelDef(value ModelDef) error
+
+	MapModule(value Module) error
+
+	MapNew(value New) error
+
+	MapNil(value Nil) error
+
+	MapPop(value Pop) error
+
+	MapProperty(value Property) error
+
+	MapPush(value Push) error
+
+	MapReturn(value Return) error
+
+	MapRoot(value Root) error
+
+	MapRune(value Rune) error
+
+	MapSelf(value Self) error
+
+	MapSet(value Set) error
+
+	MapSetContains(value SetContains) error
+
+	MapString(value String) error
+
+	MapVariable(value Variable) error
+
+	MapVoid(value Void) error
+}
+
+func MapNodeOnlyError(node Node, mapper NodeMapperOnlyError) error {
+	switch value := node.(type) {
+
+	case AddToSet:
+		return mapper.MapAddToSet(value)
+
+	case ArgumentDef:
+		return mapper.MapArgumentDef(value)
+
+	case Assignment:
+		return mapper.MapAssignment(value)
+
+	case Block:
+		return mapper.MapBlock(value)
+
+	case Bool:
+		return mapper.MapBool(value)
+
+	case Break:
+		return mapper.MapBreak(value)
+
+	case Call:
+		return mapper.MapCall(value)
+
+	case Conditional:
+		return mapper.MapConditional(value)
+
+	case ConstantDef:
+		return mapper.MapConstantDef(value)
+
+	case Continue:
+		return mapper.MapContinue(value)
+
+	case Declare:
+		return mapper.MapDeclare(value)
+
+	case EmptyList:
+		return mapper.MapEmptyList(value)
+
+	case EqualOverride:
+		return mapper.MapEqualOverride(value)
+
+	case FieldDef:
+		return mapper.MapFieldDef(value)
+
+	case For:
+		return mapper.MapFor(value)
+
+	case ForEach:
+		return mapper.MapForEach(value)
+
+	case FunctionDef:
+		return mapper.MapFunctionDef(value)
+
+	case HashOverride:
+		return mapper.MapHashOverride(value)
+
+	case If:
+		return mapper.MapIf(value)
+
+	case Int64:
+		return mapper.MapInt64(value)
+
+	case KeyValue:
+		return mapper.MapKeyValue(value)
+
+	case Length:
+		return mapper.MapLength(value)
+
+	case List:
+		return mapper.MapList(value)
+
+	case LiteralBool:
+		return mapper.MapLiteralBool(value)
+
+	case LiteralInt64:
+		return mapper.MapLiteralInt64(value)
+
+	case LiteralList:
+		return mapper.MapLiteralList(value)
+
+	case LiteralMap:
+		return mapper.MapLiteralMap(value)
+
+	case LiteralRune:
+		return mapper.MapLiteralRune(value)
+
+	case LiteralSet:
+		return mapper.MapLiteralSet(value)
+
+	case LiteralString:
+		return mapper.MapLiteralString(value)
+
+	case Lookup:
+		return mapper.MapLookup(value)
+
+	case Map:
+		return mapper.MapMap(value)
+
+	case Model:
+		return mapper.MapModel(value)
+
+	case ModelDef:
+		return mapper.MapModelDef(value)
+
+	case Module:
+		return mapper.MapModule(value)
+
+	case New:
+		return mapper.MapNew(value)
+
+	case Nil:
+		return mapper.MapNil(value)
+
+	case Pop:
+		return mapper.MapPop(value)
+
+	case Property:
+		return mapper.MapProperty(value)
+
+	case Push:
+		return mapper.MapPush(value)
+
+	case Return:
+		return mapper.MapReturn(value)
+
+	case Root:
+		return mapper.MapRoot(value)
+
+	case Rune:
+		return mapper.MapRune(value)
+
+	case Self:
+		return mapper.MapSelf(value)
+
+	case Set:
+		return mapper.MapSet(value)
+
+	case SetContains:
+		return mapper.MapSetContains(value)
+
+	case String:
+		return mapper.MapString(value)
+
+	case Variable:
+		return mapper.MapVariable(value)
+
+	case Void:
+		return mapper.MapVoid(value)
+
+	default:
+		panic("unreachable")
+	}
+}
+
+func MapEachNodeOnlyError(nodes []Node, mapper NodeMapperOnlyError) error {
+	for _, node := range nodes {
+		err := MapNodeNoError(node, mapper)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 type AssignableMapper[T any] interface {
 	MapProperty(value Property) (T, error)
 
@@ -601,6 +867,37 @@ func MapEachAssignableNoError[T any](nodes []Assignable, mapper AssignableMapper
 	return results
 }
 
+type AssignableMapperOnlyError interface {
+	MapProperty(value Property) error
+
+	MapVariable(value Variable) error
+}
+
+func MapAssignableOnlyError(node Assignable, mapper AssignableMapperOnlyError) error {
+	switch value := node.(type) {
+
+	case Property:
+		return mapper.MapProperty(value)
+
+	case Variable:
+		return mapper.MapVariable(value)
+
+	default:
+		panic("unreachable")
+	}
+}
+
+func MapEachAssignableOnlyError(nodes []Assignable, mapper AssignableMapperOnlyError) error {
+	for _, node := range nodes {
+		err := MapAssignableNoError(node, mapper)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 type CallableMapper[T any] interface {
 	MapFunctionDef(value FunctionDef) (T, error)
 }
@@ -653,6 +950,32 @@ func MapEachCallableNoError[T any](nodes []Callable, mapper CallableMapperNoErro
 	}
 
 	return results
+}
+
+type CallableMapperOnlyError interface {
+	MapFunctionDef(value FunctionDef) error
+}
+
+func MapCallableOnlyError(node Callable, mapper CallableMapperOnlyError) error {
+	switch value := node.(type) {
+
+	case FunctionDef:
+		return mapper.MapFunctionDef(value)
+
+	default:
+		panic("unreachable")
+	}
+}
+
+func MapEachCallableOnlyError(nodes []Callable, mapper CallableMapperOnlyError) error {
+	for _, node := range nodes {
+		err := MapCallableNoError(node, mapper)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 type ConstantValueMapper[T any] interface {
@@ -789,6 +1112,72 @@ func MapEachConstantValueNoError[T any](nodes []ConstantValue, mapper ConstantVa
 	return results
 }
 
+type ConstantValueMapperOnlyError interface {
+	MapEmptyList(value EmptyList) error
+
+	MapLiteralBool(value LiteralBool) error
+
+	MapLiteralInt64(value LiteralInt64) error
+
+	MapLiteralList(value LiteralList) error
+
+	MapLiteralMap(value LiteralMap) error
+
+	MapLiteralRune(value LiteralRune) error
+
+	MapLiteralSet(value LiteralSet) error
+
+	MapLiteralString(value LiteralString) error
+
+	MapNil(value Nil) error
+}
+
+func MapConstantValueOnlyError(node ConstantValue, mapper ConstantValueMapperOnlyError) error {
+	switch value := node.(type) {
+
+	case EmptyList:
+		return mapper.MapEmptyList(value)
+
+	case LiteralBool:
+		return mapper.MapLiteralBool(value)
+
+	case LiteralInt64:
+		return mapper.MapLiteralInt64(value)
+
+	case LiteralList:
+		return mapper.MapLiteralList(value)
+
+	case LiteralMap:
+		return mapper.MapLiteralMap(value)
+
+	case LiteralRune:
+		return mapper.MapLiteralRune(value)
+
+	case LiteralSet:
+		return mapper.MapLiteralSet(value)
+
+	case LiteralString:
+		return mapper.MapLiteralString(value)
+
+	case Nil:
+		return mapper.MapNil(value)
+
+	default:
+		panic("unreachable")
+	}
+}
+
+func MapEachConstantValueOnlyError(nodes []ConstantValue, mapper ConstantValueMapperOnlyError) error {
+	for _, node := range nodes {
+		err := MapConstantValueNoError(node, mapper)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 type DefinitionMapper[T any] interface {
 	MapArgumentDef(value ArgumentDef) (T, error)
 
@@ -881,6 +1270,52 @@ func MapEachDefinitionNoError[T any](nodes []Definition, mapper DefinitionMapper
 	}
 
 	return results
+}
+
+type DefinitionMapperOnlyError interface {
+	MapArgumentDef(value ArgumentDef) error
+
+	MapConstantDef(value ConstantDef) error
+
+	MapDeclare(value Declare) error
+
+	MapFieldDef(value FieldDef) error
+
+	MapForEach(value ForEach) error
+}
+
+func MapDefinitionOnlyError(node Definition, mapper DefinitionMapperOnlyError) error {
+	switch value := node.(type) {
+
+	case ArgumentDef:
+		return mapper.MapArgumentDef(value)
+
+	case ConstantDef:
+		return mapper.MapConstantDef(value)
+
+	case Declare:
+		return mapper.MapDeclare(value)
+
+	case FieldDef:
+		return mapper.MapFieldDef(value)
+
+	case ForEach:
+		return mapper.MapForEach(value)
+
+	default:
+		panic("unreachable")
+	}
+}
+
+func MapEachDefinitionOnlyError(nodes []Definition, mapper DefinitionMapperOnlyError) error {
+	for _, node := range nodes {
+		err := MapDefinitionNoError(node, mapper)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 type StatementMapper[T any] interface {
@@ -1047,6 +1482,87 @@ func MapEachStatementNoError[T any](nodes []Statement, mapper StatementMapperNoE
 	return results
 }
 
+type StatementMapperOnlyError interface {
+	MapAddToSet(value AddToSet) error
+
+	MapAssignment(value Assignment) error
+
+	MapBreak(value Break) error
+
+	MapCall(value Call) error
+
+	MapConditional(value Conditional) error
+
+	MapContinue(value Continue) error
+
+	MapDeclare(value Declare) error
+
+	MapFor(value For) error
+
+	MapForEach(value ForEach) error
+
+	MapPop(value Pop) error
+
+	MapPush(value Push) error
+
+	MapReturn(value Return) error
+}
+
+func MapStatementOnlyError(node Statement, mapper StatementMapperOnlyError) error {
+	switch value := node.(type) {
+
+	case AddToSet:
+		return mapper.MapAddToSet(value)
+
+	case Assignment:
+		return mapper.MapAssignment(value)
+
+	case Break:
+		return mapper.MapBreak(value)
+
+	case Call:
+		return mapper.MapCall(value)
+
+	case Conditional:
+		return mapper.MapConditional(value)
+
+	case Continue:
+		return mapper.MapContinue(value)
+
+	case Declare:
+		return mapper.MapDeclare(value)
+
+	case For:
+		return mapper.MapFor(value)
+
+	case ForEach:
+		return mapper.MapForEach(value)
+
+	case Pop:
+		return mapper.MapPop(value)
+
+	case Push:
+		return mapper.MapPush(value)
+
+	case Return:
+		return mapper.MapReturn(value)
+
+	default:
+		panic("unreachable")
+	}
+}
+
+func MapEachStatementOnlyError(nodes []Statement, mapper StatementMapperOnlyError) error {
+	for _, node := range nodes {
+		err := MapStatementNoError(node, mapper)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 type TypeMapper[T any] interface {
 	MapBool(value Bool) (T, error)
 
@@ -1179,6 +1695,72 @@ func MapEachTypeNoError[T any](nodes []Type, mapper TypeMapperNoError[T]) []T {
 	}
 
 	return results
+}
+
+type TypeMapperOnlyError interface {
+	MapBool(value Bool) error
+
+	MapInt64(value Int64) error
+
+	MapList(value List) error
+
+	MapMap(value Map) error
+
+	MapModel(value Model) error
+
+	MapRune(value Rune) error
+
+	MapSet(value Set) error
+
+	MapString(value String) error
+
+	MapVoid(value Void) error
+}
+
+func MapTypeOnlyError(node Type, mapper TypeMapperOnlyError) error {
+	switch value := node.(type) {
+
+	case Bool:
+		return mapper.MapBool(value)
+
+	case Int64:
+		return mapper.MapInt64(value)
+
+	case List:
+		return mapper.MapList(value)
+
+	case Map:
+		return mapper.MapMap(value)
+
+	case Model:
+		return mapper.MapModel(value)
+
+	case Rune:
+		return mapper.MapRune(value)
+
+	case Set:
+		return mapper.MapSet(value)
+
+	case String:
+		return mapper.MapString(value)
+
+	case Void:
+		return mapper.MapVoid(value)
+
+	default:
+		panic("unreachable")
+	}
+}
+
+func MapEachTypeOnlyError(nodes []Type, mapper TypeMapperOnlyError) error {
+	for _, node := range nodes {
+		err := MapTypeNoError(node, mapper)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 type ValueMapper[T any] interface {
@@ -1403,4 +1985,115 @@ func MapEachValueNoError[T any](nodes []Value, mapper ValueMapperNoError[T]) []T
 	}
 
 	return results
+}
+
+type ValueMapperOnlyError interface {
+	MapCall(value Call) error
+
+	MapEmptyList(value EmptyList) error
+
+	MapLength(value Length) error
+
+	MapLiteralBool(value LiteralBool) error
+
+	MapLiteralInt64(value LiteralInt64) error
+
+	MapLiteralList(value LiteralList) error
+
+	MapLiteralMap(value LiteralMap) error
+
+	MapLiteralRune(value LiteralRune) error
+
+	MapLiteralSet(value LiteralSet) error
+
+	MapLiteralString(value LiteralString) error
+
+	MapLookup(value Lookup) error
+
+	MapNew(value New) error
+
+	MapNil(value Nil) error
+
+	MapPop(value Pop) error
+
+	MapProperty(value Property) error
+
+	MapSelf(value Self) error
+
+	MapSetContains(value SetContains) error
+
+	MapVariable(value Variable) error
+}
+
+func MapValueOnlyError(node Value, mapper ValueMapperOnlyError) error {
+	switch value := node.(type) {
+
+	case Call:
+		return mapper.MapCall(value)
+
+	case EmptyList:
+		return mapper.MapEmptyList(value)
+
+	case Length:
+		return mapper.MapLength(value)
+
+	case LiteralBool:
+		return mapper.MapLiteralBool(value)
+
+	case LiteralInt64:
+		return mapper.MapLiteralInt64(value)
+
+	case LiteralList:
+		return mapper.MapLiteralList(value)
+
+	case LiteralMap:
+		return mapper.MapLiteralMap(value)
+
+	case LiteralRune:
+		return mapper.MapLiteralRune(value)
+
+	case LiteralSet:
+		return mapper.MapLiteralSet(value)
+
+	case LiteralString:
+		return mapper.MapLiteralString(value)
+
+	case Lookup:
+		return mapper.MapLookup(value)
+
+	case New:
+		return mapper.MapNew(value)
+
+	case Nil:
+		return mapper.MapNil(value)
+
+	case Pop:
+		return mapper.MapPop(value)
+
+	case Property:
+		return mapper.MapProperty(value)
+
+	case Self:
+		return mapper.MapSelf(value)
+
+	case SetContains:
+		return mapper.MapSetContains(value)
+
+	case Variable:
+		return mapper.MapVariable(value)
+
+	default:
+		panic("unreachable")
+	}
+}
+
+func MapEachValueOnlyError(nodes []Value, mapper ValueMapperOnlyError) error {
+	for _, node := range nodes {
+		err := MapValueNoError(node, mapper)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

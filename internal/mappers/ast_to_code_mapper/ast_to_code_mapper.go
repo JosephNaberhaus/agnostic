@@ -3,9 +3,13 @@ package ast_to_code_mapper
 import (
 	"github.com/JosephNaberhaus/agnostic/ast"
 	"github.com/JosephNaberhaus/agnostic/code"
+	"github.com/JosephNaberhaus/agnostic/internal/mappers/populate_metadata_mapper"
 	"github.com/JosephNaberhaus/agnostic/internal/utils/stack"
 )
 
+var _ ast.NodeMapper[code.Node] = &Mapper{}
+
+// Mapper is a mapper that converts AST into Code. It should only be used by mapping an ast.Root.
 type Mapper struct {
 	// The current stack. This is the path from the root node of the AST to the node currently being processed.
 	stack stack.Stack[code.Node]
@@ -38,6 +42,11 @@ func (m *Mapper) MapRoot(original ast.Root) (code.Node, error) {
 	}
 	m.stack = curStack
 
+	err = code.MapNodeOnlyError(value, populate_metadata_mapper.Mapper{Stack: m.stack})
+	if err != nil {
+		return nil, err
+	}
+
 	return value, nil
 }
 
@@ -57,6 +66,11 @@ func (m *Mapper) MapAddToSet(original ast.AddToSet) (code.Node, error) {
 		return nil, err
 	}
 
+	err = code.MapNodeOnlyError(value, populate_metadata_mapper.Mapper{Stack: m.stack})
+	if err != nil {
+		return nil, err
+	}
+
 	return value, nil
 }
 
@@ -69,6 +83,11 @@ func (m *Mapper) MapArgumentDef(original ast.ArgumentDef) (code.Node, error) {
 
 	var err error
 	value.Type, err = mapAstNodeTo[code.Type](original.Type, m)
+	if err != nil {
+		return nil, err
+	}
+
+	err = code.MapNodeOnlyError(value, populate_metadata_mapper.Mapper{Stack: m.stack})
 	if err != nil {
 		return nil, err
 	}
@@ -92,6 +111,11 @@ func (m *Mapper) MapAssignment(original ast.Assignment) (code.Node, error) {
 		return nil, err
 	}
 
+	err = code.MapNodeOnlyError(value, populate_metadata_mapper.Mapper{Stack: m.stack})
+	if err != nil {
+		return nil, err
+	}
+
 	return value, nil
 }
 
@@ -106,6 +130,11 @@ func (m *Mapper) MapBlock(original ast.Block) (code.Node, error) {
 		return nil, err
 	}
 
+	err = code.MapNodeOnlyError(value, populate_metadata_mapper.Mapper{Stack: m.stack})
+	if err != nil {
+		return nil, err
+	}
+
 	return value, nil
 }
 
@@ -114,6 +143,11 @@ func (m *Mapper) MapBool(original ast.Bool) (code.Node, error) {
 	m.stack.Push(value)
 	defer m.stack.Pop()
 
+	err := code.MapNodeOnlyError(value, populate_metadata_mapper.Mapper{Stack: m.stack})
+	if err != nil {
+		return nil, err
+	}
+
 	return value, nil
 }
 
@@ -121,6 +155,11 @@ func (m *Mapper) MapBreak(original ast.Break) (code.Node, error) {
 	value := &code.Break{}
 	m.stack.Push(value)
 	defer m.stack.Pop()
+
+	err := code.MapNodeOnlyError(value, populate_metadata_mapper.Mapper{Stack: m.stack})
+	if err != nil {
+		return nil, err
+	}
 
 	return value, nil
 }
@@ -137,6 +176,11 @@ func (m *Mapper) MapCall(original ast.Call) (code.Node, error) {
 	}
 
 	value.Function, err = mapAstNodeTo[code.Callable](original.Function, m)
+	if err != nil {
+		return nil, err
+	}
+
+	err = code.MapNodeOnlyError(value, populate_metadata_mapper.Mapper{Stack: m.stack})
 	if err != nil {
 		return nil, err
 	}
@@ -162,6 +206,11 @@ func (m *Mapper) MapConditional(original ast.Conditional) (code.Node, error) {
 		return nil, err
 	}
 
+	err = code.MapNodeOnlyError(value, populate_metadata_mapper.Mapper{Stack: m.stack})
+	if err != nil {
+		return nil, err
+	}
+
 	return value, nil
 }
 
@@ -178,6 +227,11 @@ func (m *Mapper) MapConstantDef(original ast.ConstantDef) (code.Node, error) {
 		return nil, err
 	}
 
+	err = code.MapNodeOnlyError(value, populate_metadata_mapper.Mapper{Stack: m.stack})
+	if err != nil {
+		return nil, err
+	}
+
 	return value, nil
 }
 
@@ -185,6 +239,11 @@ func (m *Mapper) MapContinue(original ast.Continue) (code.Node, error) {
 	value := &code.Continue{}
 	m.stack.Push(value)
 	defer m.stack.Pop()
+
+	err := code.MapNodeOnlyError(value, populate_metadata_mapper.Mapper{Stack: m.stack})
+	if err != nil {
+		return nil, err
+	}
 
 	return value, nil
 }
@@ -202,6 +261,11 @@ func (m *Mapper) MapDeclare(original ast.Declare) (code.Node, error) {
 		return nil, err
 	}
 
+	err = code.MapNodeOnlyError(value, populate_metadata_mapper.Mapper{Stack: m.stack})
+	if err != nil {
+		return nil, err
+	}
+
 	return value, nil
 }
 
@@ -212,6 +276,11 @@ func (m *Mapper) MapEmptyList(original ast.EmptyList) (code.Node, error) {
 
 	var err error
 	value.Type, err = mapAstNodeTo[code.Type](original.Type, m)
+	if err != nil {
+		return nil, err
+	}
+
+	err = code.MapNodeOnlyError(value, populate_metadata_mapper.Mapper{Stack: m.stack})
 	if err != nil {
 		return nil, err
 	}
@@ -232,6 +301,11 @@ func (m *Mapper) MapEqualOverride(original ast.EqualOverride) (code.Node, error)
 
 	value.OtherName = original.OtherName
 
+	err = code.MapNodeOnlyError(value, populate_metadata_mapper.Mapper{Stack: m.stack})
+	if err != nil {
+		return nil, err
+	}
+
 	return value, nil
 }
 
@@ -244,6 +318,11 @@ func (m *Mapper) MapFieldDef(original ast.FieldDef) (code.Node, error) {
 
 	var err error
 	value.Type, err = mapAstNodeTo[code.Type](original.Type, m)
+	if err != nil {
+		return nil, err
+	}
+
+	err = code.MapNodeOnlyError(value, populate_metadata_mapper.Mapper{Stack: m.stack})
 	if err != nil {
 		return nil, err
 	}
@@ -281,6 +360,11 @@ func (m *Mapper) MapFor(original ast.For) (code.Node, error) {
 		}
 	}
 
+	err = code.MapNodeOnlyError(value, populate_metadata_mapper.Mapper{Stack: m.stack})
+	if err != nil {
+		return nil, err
+	}
+
 	return value, nil
 }
 
@@ -298,6 +382,11 @@ func (m *Mapper) MapForEach(original ast.ForEach) (code.Node, error) {
 	value.ItemName = original.ItemName
 
 	value.Iterable, err = mapAstNodeTo[code.Value](original.Iterable, m)
+	if err != nil {
+		return nil, err
+	}
+
+	err = code.MapNodeOnlyError(value, populate_metadata_mapper.Mapper{Stack: m.stack})
 	if err != nil {
 		return nil, err
 	}
@@ -333,6 +422,11 @@ func (m *Mapper) MapFunctionDef(original ast.FunctionDef) (code.Node, error) {
 		return nil
 	})
 
+	err = code.MapNodeOnlyError(value, populate_metadata_mapper.Mapper{Stack: m.stack})
+	if err != nil {
+		return nil, err
+	}
+
 	return value, nil
 }
 
@@ -343,6 +437,11 @@ func (m *Mapper) MapHashOverride(original ast.HashOverride) (code.Node, error) {
 
 	var err error
 	value.Block, err = mapAstNodeTo[*code.Block](original.Block, m)
+	if err != nil {
+		return nil, err
+	}
+
+	err = code.MapNodeOnlyError(value, populate_metadata_mapper.Mapper{Stack: m.stack})
 	if err != nil {
 		return nil, err
 	}
@@ -366,6 +465,11 @@ func (m *Mapper) MapIf(original ast.If) (code.Node, error) {
 		return nil, err
 	}
 
+	err = code.MapNodeOnlyError(value, populate_metadata_mapper.Mapper{Stack: m.stack})
+	if err != nil {
+		return nil, err
+	}
+
 	return value, nil
 }
 
@@ -373,6 +477,11 @@ func (m *Mapper) MapInt64(original ast.Int64) (code.Node, error) {
 	value := &code.Int64{}
 	m.stack.Push(value)
 	defer m.stack.Pop()
+
+	err := code.MapNodeOnlyError(value, populate_metadata_mapper.Mapper{Stack: m.stack})
+	if err != nil {
+		return nil, err
+	}
 
 	return value, nil
 }
@@ -393,6 +502,11 @@ func (m *Mapper) MapKeyValue(original ast.KeyValue) (code.Node, error) {
 		return nil, err
 	}
 
+	err = code.MapNodeOnlyError(value, populate_metadata_mapper.Mapper{Stack: m.stack})
+	if err != nil {
+		return nil, err
+	}
+
 	return value, nil
 }
 
@@ -403,6 +517,11 @@ func (m *Mapper) MapLength(original ast.Length) (code.Node, error) {
 
 	var err error
 	value.Of, err = mapAstNodeTo[code.Value](original.Of, m)
+	if err != nil {
+		return nil, err
+	}
+
+	err = code.MapNodeOnlyError(value, populate_metadata_mapper.Mapper{Stack: m.stack})
 	if err != nil {
 		return nil, err
 	}
@@ -421,6 +540,11 @@ func (m *Mapper) MapList(original ast.List) (code.Node, error) {
 		return nil, err
 	}
 
+	err = code.MapNodeOnlyError(value, populate_metadata_mapper.Mapper{Stack: m.stack})
+	if err != nil {
+		return nil, err
+	}
+
 	return value, nil
 }
 
@@ -430,6 +554,11 @@ func (m *Mapper) MapLiteralBool(original ast.LiteralBool) (code.Node, error) {
 	defer m.stack.Pop()
 
 	value.Value = original.Value
+
+	err := code.MapNodeOnlyError(value, populate_metadata_mapper.Mapper{Stack: m.stack})
+	if err != nil {
+		return nil, err
+	}
 
 	return value, nil
 }
@@ -441,6 +570,11 @@ func (m *Mapper) MapLiteralInt64(original ast.LiteralInt64) (code.Node, error) {
 
 	value.Value = original.Value
 
+	err := code.MapNodeOnlyError(value, populate_metadata_mapper.Mapper{Stack: m.stack})
+	if err != nil {
+		return nil, err
+	}
+
 	return value, nil
 }
 
@@ -451,6 +585,11 @@ func (m *Mapper) MapLiteralList(original ast.LiteralList) (code.Node, error) {
 
 	var err error
 	value.Values, err = mapAstNodesTo[code.Value](original.Values, m)
+	if err != nil {
+		return nil, err
+	}
+
+	err = code.MapNodeOnlyError(value, populate_metadata_mapper.Mapper{Stack: m.stack})
 	if err != nil {
 		return nil, err
 	}
@@ -469,6 +608,11 @@ func (m *Mapper) MapLiteralMap(original ast.LiteralMap) (code.Node, error) {
 		return nil, err
 	}
 
+	err = code.MapNodeOnlyError(value, populate_metadata_mapper.Mapper{Stack: m.stack})
+	if err != nil {
+		return nil, err
+	}
+
 	return value, nil
 }
 
@@ -478,6 +622,11 @@ func (m *Mapper) MapLiteralRune(original ast.LiteralRune) (code.Node, error) {
 	defer m.stack.Pop()
 
 	value.Value = original.Value
+
+	err := code.MapNodeOnlyError(value, populate_metadata_mapper.Mapper{Stack: m.stack})
+	if err != nil {
+		return nil, err
+	}
 
 	return value, nil
 }
@@ -493,6 +642,11 @@ func (m *Mapper) MapLiteralSet(original ast.LiteralSet) (code.Node, error) {
 		return nil, err
 	}
 
+	err = code.MapNodeOnlyError(value, populate_metadata_mapper.Mapper{Stack: m.stack})
+	if err != nil {
+		return nil, err
+	}
+
 	return value, nil
 }
 
@@ -502,6 +656,11 @@ func (m *Mapper) MapLiteralString(original ast.LiteralString) (code.Node, error)
 	defer m.stack.Pop()
 
 	value.Value = original.Value
+
+	err := code.MapNodeOnlyError(value, populate_metadata_mapper.Mapper{Stack: m.stack})
+	if err != nil {
+		return nil, err
+	}
 
 	return value, nil
 }
@@ -518,6 +677,11 @@ func (m *Mapper) MapLookup(original ast.Lookup) (code.Node, error) {
 	}
 
 	value.Key, err = mapAstNodeTo[code.Value](original.Key, m)
+	if err != nil {
+		return nil, err
+	}
+
+	err = code.MapNodeOnlyError(value, populate_metadata_mapper.Mapper{Stack: m.stack})
 	if err != nil {
 		return nil, err
 	}
@@ -541,6 +705,11 @@ func (m *Mapper) MapMap(original ast.Map) (code.Node, error) {
 		return nil, err
 	}
 
+	err = code.MapNodeOnlyError(value, populate_metadata_mapper.Mapper{Stack: m.stack})
+	if err != nil {
+		return nil, err
+	}
+
 	return value, nil
 }
 
@@ -550,6 +719,11 @@ func (m *Mapper) MapModel(original ast.Model) (code.Node, error) {
 	defer m.stack.Pop()
 
 	value.Name = original.Name
+
+	err := code.MapNodeOnlyError(value, populate_metadata_mapper.Mapper{Stack: m.stack})
+	if err != nil {
+		return nil, err
+	}
 
 	return value, nil
 }
@@ -587,6 +761,11 @@ func (m *Mapper) MapModelDef(original ast.ModelDef) (code.Node, error) {
 		return nil
 	})
 
+	err := code.MapNodeOnlyError(value, populate_metadata_mapper.Mapper{Stack: m.stack})
+	if err != nil {
+		return nil, err
+	}
+
 	return value, nil
 }
 
@@ -613,6 +792,11 @@ func (m *Mapper) MapModule(original ast.Module) (code.Node, error) {
 
 	value.Name = original.Name
 
+	err = code.MapNodeOnlyError(value, populate_metadata_mapper.Mapper{Stack: m.stack})
+	if err != nil {
+		return nil, err
+	}
+
 	return value, nil
 }
 
@@ -623,6 +807,11 @@ func (m *Mapper) MapNew(original ast.New) (code.Node, error) {
 
 	var err error
 	value.Model, err = mapAstNodeTo[*code.Model](original.Model, m)
+	if err != nil {
+		return nil, err
+	}
+
+	err = code.MapNodeOnlyError(value, populate_metadata_mapper.Mapper{Stack: m.stack})
 	if err != nil {
 		return nil, err
 	}
@@ -641,6 +830,11 @@ func (m *Mapper) MapNil(original ast.Nil) (code.Node, error) {
 		return nil, err
 	}
 
+	err = code.MapNodeOnlyError(value, populate_metadata_mapper.Mapper{Stack: m.stack})
+	if err != nil {
+		return nil, err
+	}
+
 	return value, nil
 }
 
@@ -651,6 +845,11 @@ func (m *Mapper) MapPop(original ast.Pop) (code.Node, error) {
 
 	var err error
 	value.List, err = mapAstNodeTo[code.Value](original.List, m)
+	if err != nil {
+		return nil, err
+	}
+
+	err = code.MapNodeOnlyError(value, populate_metadata_mapper.Mapper{Stack: m.stack})
 	if err != nil {
 		return nil, err
 	}
@@ -667,6 +866,11 @@ func (m *Mapper) MapProperty(original ast.Property) (code.Node, error) {
 
 	var err error
 	value.Of, err = mapAstNodeTo[code.Value](original.Of, m)
+	if err != nil {
+		return nil, err
+	}
+
+	err = code.MapNodeOnlyError(value, populate_metadata_mapper.Mapper{Stack: m.stack})
 	if err != nil {
 		return nil, err
 	}
@@ -690,6 +894,11 @@ func (m *Mapper) MapPush(original ast.Push) (code.Node, error) {
 		return nil, err
 	}
 
+	err = code.MapNodeOnlyError(value, populate_metadata_mapper.Mapper{Stack: m.stack})
+	if err != nil {
+		return nil, err
+	}
+
 	return value, nil
 }
 
@@ -700,6 +909,11 @@ func (m *Mapper) MapReturn(original ast.Return) (code.Node, error) {
 
 	var err error
 	value.Value, err = mapAstNodeTo[code.Value](original.Value, m)
+	if err != nil {
+		return nil, err
+	}
+
+	err = code.MapNodeOnlyError(value, populate_metadata_mapper.Mapper{Stack: m.stack})
 	if err != nil {
 		return nil, err
 	}
@@ -720,6 +934,11 @@ func (m *Mapper) MapSelf(original ast.Self) (code.Node, error) {
 	m.stack.Push(value)
 	defer m.stack.Pop()
 
+	err := code.MapNodeOnlyError(value, populate_metadata_mapper.Mapper{Stack: m.stack})
+	if err != nil {
+		return nil, err
+	}
+
 	return value, nil
 }
 
@@ -730,6 +949,11 @@ func (m *Mapper) MapSet(original ast.Set) (code.Node, error) {
 
 	var err error
 	value.Item, err = mapAstNodeTo[code.Type](original.Item, m)
+	if err != nil {
+		return nil, err
+	}
+
+	err = code.MapNodeOnlyError(value, populate_metadata_mapper.Mapper{Stack: m.stack})
 	if err != nil {
 		return nil, err
 	}
@@ -753,6 +977,11 @@ func (m *Mapper) MapSetContains(original ast.SetContains) (code.Node, error) {
 		return nil, err
 	}
 
+	err = code.MapNodeOnlyError(value, populate_metadata_mapper.Mapper{Stack: m.stack})
+	if err != nil {
+		return nil, err
+	}
+
 	return value, nil
 }
 
@@ -760,6 +989,11 @@ func (m *Mapper) MapString(original ast.String) (code.Node, error) {
 	value := &code.String{}
 	m.stack.Push(value)
 	defer m.stack.Pop()
+
+	err := code.MapNodeOnlyError(value, populate_metadata_mapper.Mapper{Stack: m.stack})
+	if err != nil {
+		return nil, err
+	}
 
 	return value, nil
 }
@@ -771,6 +1005,11 @@ func (m *Mapper) MapVariable(original ast.Variable) (code.Node, error) {
 
 	value.Name = original.Name
 
+	err := code.MapNodeOnlyError(value, populate_metadata_mapper.Mapper{Stack: m.stack})
+	if err != nil {
+		return nil, err
+	}
+
 	return value, nil
 }
 
@@ -778,6 +1017,11 @@ func (m *Mapper) MapVoid(original ast.Void) (code.Node, error) {
 	value := &code.Void{}
 	m.stack.Push(value)
 	defer m.stack.Pop()
+
+	err := code.MapNodeOnlyError(value, populate_metadata_mapper.Mapper{Stack: m.stack})
+	if err != nil {
+		return nil, err
+	}
 
 	return value, nil
 }

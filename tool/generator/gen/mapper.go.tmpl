@@ -62,6 +62,34 @@ func MapEachNodeNoError[T any](nodes []Node, mapper NodeMapperNoError[T]) []T {
 	return results
 }
 
+type NodeMapperOnlyError interface {
+{{ range .Specs }}
+	Map{{ .Name }}(value {{ .Name }}) error
+{{ end }}
+}
+
+func MapNodeOnlyError(node Node, mapper NodeMapperOnlyError) error {
+	switch value := node.(type) {
+{{ range .Specs }}
+		case {{ .Name }}:
+			return mapper.Map{{ .Name }}(value)
+{{ end }}
+		default:
+			panic("unreachable")
+	}
+}
+
+func MapEachNodeOnlyError(nodes []Node, mapper NodeMapperOnlyError) error {
+	for _, node := range nodes {
+		err := MapNodeNoError(node, mapper)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 {{ range $type, $implementations := .ImplementationsByNodeType }}
 type {{ $type }}Mapper[T any] interface {
 {{ range $implementations }}
@@ -119,5 +147,33 @@ func MapEach{{ $type }}NoError[T any](nodes []{{ $type }}, mapper {{ $type }}Map
 	}
 
 	return results
+}
+
+type {{ $type }}MapperOnlyError interface {
+{{ range $implementations }}
+	Map{{ . }}(value {{ . }}) error
+{{ end }}
+}
+
+func Map{{ $type }}OnlyError(node {{ $type }}, mapper {{ $type }}MapperOnlyError) error {
+	switch value := node.(type) {
+{{ range $implementations }}
+		case {{ . }}:
+			return mapper.Map{{ . }}(value)
+{{ end }}
+		default:
+			panic("unreachable")
+	}
+}
+
+func MapEach{{ $type }}OnlyError(nodes []{{ $type }}, mapper {{ $type }}MapperOnlyError) error {
+	for _, node := range nodes {
+		err := Map{{ $type }}NoError(node, mapper)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 {{ end }}
