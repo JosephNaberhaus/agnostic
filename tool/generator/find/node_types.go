@@ -17,3 +17,14 @@ func AllNodeTypes(specs []model.Spec) []string {
 
 	return allNodeTypes
 }
+
+func ImplementationsByNodeType(specs []model.Spec) map[string][]string {
+	result := map[string][]string{}
+	for _, spec := range specs {
+		for _, typ := range spec.Types {
+			result[typ] = append(result[typ], spec.Name)
+		}
+	}
+
+	return result
+}

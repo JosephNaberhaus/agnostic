@@ -1,30 +1,34 @@
 package ast
 
-
-type Assignable interface {
-    isAssignable()
-}
-
-type Statement interface {
-    isStatement()
-}
-
-type Definition interface {
-    isDefinition()
-}
-
-type Type interface {
-    isType()
-}
-
-type Value interface {
-    isValue()
+type Node interface {
+	// isNode is just a interface guard to restrict what can be used as a Node.
+	isNode()
 }
 
 type ConstantValue interface {
-    isConstantValue()
+	isConstantValue()
 }
 
 type Callable interface {
-    isCallable()
+	isCallable()
+}
+
+type Assignable interface {
+	isAssignable()
+}
+
+type Statement interface {
+	isStatement()
+}
+
+type Definition interface {
+	isDefinition()
+}
+
+type Type interface {
+	isType()
+}
+
+type Value interface {
+	isValue()
 }

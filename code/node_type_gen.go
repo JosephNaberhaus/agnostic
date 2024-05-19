@@ -1,30 +1,34 @@
 package code
 
-
-type ConstantValue interface {
-    isConstantValue()
-}
-
-type Callable interface {
-    isCallable()
-}
-
-type Assignable interface {
-    isAssignable()
-}
-
-type Statement interface {
-    isStatement()
-}
-
-type Definition interface {
-    isDefinition()
+type Node interface {
+	// isNode is just a interface guard to restrict what can be used as a Node.
+	isNode()
 }
 
 type Type interface {
-    isType()
+	isType()
 }
 
 type Value interface {
-    isValue()
+	isValue()
+}
+
+type ConstantValue interface {
+	isConstantValue()
+}
+
+type Callable interface {
+	isCallable()
+}
+
+type Assignable interface {
+	isAssignable()
+}
+
+type Statement interface {
+	isStatement()
+}
+
+type Definition interface {
+	isDefinition()
 }

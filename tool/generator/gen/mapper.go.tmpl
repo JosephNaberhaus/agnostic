@@ -1,0 +1,120 @@
+package {{ .Package }}
+
+type NodeMapper[T any] interface {
+{{ range .Specs }}
+	Map{{ .Name }}(value {{ .Name }}) (T, error)
+{{ end }}
+}
+
+func MapNode[T any](node Node, mapper NodeMapper[T]) (T, error) {
+	switch value := node.(type) {
+{{ range .Specs }}
+		case {{ .Name }}:
+			return mapper.Map{{ .Name }}(value)
+{{ end }}
+		default:
+			panic("unreachable")
+	}
+}
+
+
+func MapEachNode[T any](nodes []Node, mapper NodeMapper[T]) ([]T, error) {
+	results := make([]T, 0, len(nodes))
+	for _, node := range nodes {
+		result, err := MapNode(node, mapper)
+		if err != nil {
+			return nil, err
+		}
+
+		results = append(results, result)
+	}
+
+	return results, nil
+}
+
+type NodeMapperNoError[T any] interface {
+{{ range .Specs }}
+	Map{{ .Name }}(value {{ .Name }}) T
+{{ end }}
+}
+
+func MapNodeNoError[T any](node Node, mapper NodeMapperNoError[T]) T {
+	switch value := node.(type) {
+{{ range .Specs }}
+		case {{ .Name }}:
+			return mapper.Map{{ .Name }}(value)
+{{ end }}
+		default:
+			panic("unreachable")
+	}
+}
+
+func MapEachNodeNoError[T any](nodes []Node, mapper NodeMapperNoError[T]) []T {
+	results := make([]T, 0, len(nodes))
+	for _, node := range nodes {
+		result := MapNodeNoError(node, mapper)
+		results = append(results, result)
+	}
+
+	return results
+}
+
+{{ range $type, $implementations := .ImplementationsByNodeType }}
+type {{ $type }}Mapper[T any] interface {
+{{ range $implementations }}
+	Map{{ . }}(value {{ . }}) (T, error)
+{{ end }}
+}
+
+func Map{{ $type }}[T any](node {{ $type}}, mapper {{ $type }}Mapper[T]) (T, error) {
+	switch value := node.(type) {
+{{ range $implementations }}
+		case {{ . }}:
+			return mapper.Map{{ . }}(value)
+{{ end }}
+		default:
+			panic("unreachable")
+	}
+}
+
+func MapEach{{ $type }}[T any](nodes []{{ $type }}, mapper {{ $type }}Mapper[T]) ([]T, error) {
+	results := make([]T, 0, len(nodes))
+	for _, node := range nodes {
+		result, err := Map{{ $type }}(node, mapper)
+		if err != nil {
+			return nil, err
+		}
+
+		results = append(results, result)
+	}
+
+	return results, nil
+}
+
+type {{ $type }}MapperNoError[T any] interface {
+{{ range $implementations }}
+	Map{{ . }}(value {{ . }}) T
+{{ end }}
+}
+
+func Map{{ $type }}NoError[T any](node {{ $type}}, mapper {{ $type }}MapperNoError[T]) T {
+	switch value := node.(type) {
+{{ range $implementations }}
+		case {{ . }}:
+			return mapper.Map{{ . }}(value)
+{{ end }}
+		default:
+			panic("unreachable")
+	}
+}
+
+func MapEach{{ $type }}NoError[T any](nodes []{{ $type }}, mapper {{ $type }}MapperNoError[T]) []T {
+	results := make([]T, 0, len(nodes))
+	for _, node := range nodes {
+		result := Map{{ $type }}NoError(node, mapper)
+		results = append(results, result)
+	}
+
+	return results
+}
+{{ end }}

@@ -20,6 +20,7 @@ const (
 
 	astFilename      = "ast_gen.go"
 	codeFilename     = "code_gen.go"
+	mapperFilename   = "mapper_gen.go"
 	nodeTypeFilename = "node_type_gen.go"
 	optionalFilename = "optional_gen.go"
 )
@@ -30,6 +31,9 @@ var astTemplate string
 //go:embed code.go.tmpl
 var codeTemplate string
 
+//go:embed mapper.go.tmpl
+var mapperTemplate string
+
 //go:embed node_types.go.tmpl
 var nodeTypesTemplate string
 
@@ -39,6 +43,11 @@ var optionalTemplate string
 func WriteAST(specs []model.Spec) error {
 	astFile := filepath.Join(astDirectory, astFilename)
 	err := executeTemplate(astTemplate, astFile, specs)
+	if err != nil {
+		return err
+	}
+
+	err = writeMapper(specs, astPackage, astDirectory)
 	if err != nil {
 		return err
 	}
@@ -63,6 +72,11 @@ func WriteCode(specs []model.Spec) error {
 		return err
 	}
 
+	err = writeMapper(specs, codePackage, codeDirectory)
+	if err != nil {
+		return err
+	}
+
 	err = writeNodeTypes(specs, codePackage, codeDirectory)
 	if err != nil {
 		return err
@@ -74,6 +88,21 @@ func WriteCode(specs []model.Spec) error {
 	}
 
 	return nil
+}
+
+func writeMapper(specs []model.Spec, packageName, outputDir string) error {
+	data := struct {
+		Package                   string
+		ImplementationsByNodeType map[string][]string
+		Specs                     []model.Spec
+	}{
+		Package:                   packageName,
+		ImplementationsByNodeType: find.ImplementationsByNodeType(specs),
+		Specs:                     specs,
+	}
+
+	mapperFile := filepath.Join(outputDir, mapperFilename)
+	return executeTemplate(mapperTemplate, mapperFile, data)
 }
 
 func writeNodeTypes(specs []model.Spec, packageName, outputDir string) error {

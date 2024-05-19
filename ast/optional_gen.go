@@ -2,7 +2,7 @@ package ast
 
 type Optional[T any] struct {
 	value T
-	set bool
+	set   bool
 }
 
 func OptionalWithValue[T any](value T) Optional[T] {

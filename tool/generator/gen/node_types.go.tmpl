@@ -1,5 +1,10 @@
 package {{ .Package }}
 
+type Node interface {
+	// isNode is just a interface guard to restrict what can be used as a Node.
+	isNode()
+}
+
 {{ range .NodeTypes }}
 type {{ . }} interface {
     is{{ . }}()

@@ -7,8 +7,10 @@ type {{ .Name }} struct {
 {{ end }}
 }
 
+func ({{ .Name }}) isNode() {}
+
 {{ range .Types }}
+// is{{ . }} is just a inteface guard to restrict what can be used as a {{ . }}.
 func ({{ $spec.Name }}) is{{ . }}() {}
 {{ end }}
-
 {{ end }}

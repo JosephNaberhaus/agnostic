@@ -9,8 +9,9 @@ type {{ .Name }} struct {
     {{ .Name }}Metadata
 }
 
+func ({{ .Name }}) isNode() {}
+
 {{ range .Types }}
 func ({{ $spec.Name }}) is{{ . }}() {}
 {{ end }}
-
 {{ end }}
