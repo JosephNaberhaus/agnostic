@@ -10,6 +10,8 @@ This package contains a tool used to generate the [ast](../../ast) and [code](..
     - They contain metadata about the node that the language-specific generators can use.
     - Their properties are all pointers because the metadata properties often create reference loops.
 
+It also generates the mappers for each package. Mappers are basically just a wrapper around a type switch. The main difference is that mappers force you to be exhaustive. If you add a new node you will get a compile time error until you handle the new node.
+
 ## Updating the AST
 
 To add something to the AST and Code nodes you will make an update to the [spec](./spec). When you're finished, just run `just gen` at the root of this repo.
