@@ -316,17 +316,22 @@ func (m *Mapper) MapFunctionDef(original ast.FunctionDef) (code.Node, error) {
 		return nil, err
 	}
 
-	value.Block, err = mapAstNodeTo[*code.Block](original.Block, m)
-	if err != nil {
-		return nil, err
-	}
-
 	value.Name = original.Name
 
 	value.ReturnType, err = mapAstNodeTo[code.Type](original.ReturnType, m)
 	if err != nil {
 		return nil, err
 	}
+
+	// Defer because code inside this function might call a function that hasn't been processed yet.
+	m.queueDeferred(func() error {
+		value.Block, err = mapAstNodeTo[*code.Block](original.Block, m)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
 
 	return value, nil
 }
@@ -554,28 +559,33 @@ func (m *Mapper) MapModelDef(original ast.ModelDef) (code.Node, error) {
 	m.stack.Push(value)
 	defer m.stack.Pop()
 
-	var err error
-	value.EqualOverride, err = mapAstNodeTo[*code.EqualOverride](original.EqualOverride, m)
-	if err != nil {
-		return nil, err
-	}
-
-	value.Fields, err = mapAstNodesTo[*code.FieldDef](original.Fields, m)
-	if err != nil {
-		return nil, err
-	}
-
-	value.HashOverride, err = mapAstNodeTo[*code.HashOverride](original.HashOverride, m)
-	if err != nil {
-		return nil, err
-	}
-
-	value.Methods, err = mapAstNodesTo[*code.FunctionDef](original.Methods, m)
-	if err != nil {
-		return nil, err
-	}
-
 	value.Name = original.Name
+
+	// Defer because something inside this model might refer to a mode that hasn't been processed yet.
+	m.queueDeferred(func() error {
+		var err error
+		value.EqualOverride, err = mapAstNodeTo[*code.EqualOverride](original.EqualOverride, m)
+		if err != nil {
+			return err
+		}
+
+		value.Fields, err = mapAstNodesTo[*code.FieldDef](original.Fields, m)
+		if err != nil {
+			return err
+		}
+
+		value.HashOverride, err = mapAstNodeTo[*code.HashOverride](original.HashOverride, m)
+		if err != nil {
+			return err
+		}
+
+		value.Methods, err = mapAstNodesTo[*code.FunctionDef](original.Methods, m)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
 
 	return value, nil
 }
