@@ -8,10 +8,6 @@ type Node interface {
 	isNode()
 }
 
-type ConstantValue interface {
-	isConstantValue()
-}
-
 type Callable interface {
 	isCallable()
 }
@@ -34,4 +30,8 @@ type Type interface {
 
 type Value interface {
 	isValue()
+}
+
+type ConstantValue interface {
+	isConstantValue()
 }

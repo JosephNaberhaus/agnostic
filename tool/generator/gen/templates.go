@@ -5,7 +5,6 @@ import (
 	"html/template"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/JosephNaberhaus/agnostic/tool/generator/find"
 	"github.com/JosephNaberhaus/agnostic/tool/generator/model"
@@ -82,11 +81,6 @@ func WriteCode(specs []model.Spec) error {
 		return err
 	}
 
-	err = writeOptional(codePackage, codeDirectory)
-	if err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -137,7 +131,9 @@ func executeTemplate(templateText, outputFile string, data any) error {
 
 	tmpl := template.New("template ")
 	tmpl.Funcs(template.FuncMap{
-		"title": title,
+		"makePointer":    makePointer,
+		"removeOptional": removeOptional,
+		"title":          title,
 	})
 
 	tmpl, err = tmpl.Parse(templateText)
@@ -156,8 +152,4 @@ func executeTemplate(templateText, outputFile string, data any) error {
 	}
 
 	return nil
-}
-
-func title(str string) string {
-	return strings.ToUpper(str[:1]) + str[1:]
 }
