@@ -2,7 +2,7 @@ package lexer
 
 func commentConsumer() consumer[string] {
 	var result string
-	return attempt(
+	return meta(attempt(
 		&result,
 		inOrder(
 			anyWhitespaceConsumer(),
@@ -15,5 +15,5 @@ func commentConsumer() consumer[string] {
 				},
 			),
 		),
-	)
+	), TokenKind_comment)
 }

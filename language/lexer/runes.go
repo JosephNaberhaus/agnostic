@@ -11,11 +11,14 @@ type parserState struct {
 	attemptHandlers [][]func()
 
 	furthestIgnorableError error
+
+	tokens []TokenMeta
 }
 
 func newRunes(text string) parserState {
 	return parserState{
 		remaining: []rune(text),
+		tokens:    make([]TokenMeta, 0),
 	}
 }
 
