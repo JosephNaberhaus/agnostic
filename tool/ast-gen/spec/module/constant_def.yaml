@@ -1,0 +1,6 @@
+ConstantDef:
+  properties:
+    name:
+      type: string
+    value:
+      type: ConstantValue

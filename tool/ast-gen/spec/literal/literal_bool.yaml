@@ -1,0 +1,7 @@
+LiteralBool:
+  is:
+    - ConstantValue
+    - Value
+  properties:
+    value:
+      type: bool

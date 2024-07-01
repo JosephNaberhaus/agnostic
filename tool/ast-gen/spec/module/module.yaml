@@ -1,0 +1,16 @@
+Module:
+  properties:
+    name:
+      type: string
+    models:
+      type: list
+      elementType:
+        type: ModelDef
+    functions:
+      type: list
+      elementType:
+        type: FunctionDef
+    constants:
+      type: list
+      elementType:
+        type: ConstantDef

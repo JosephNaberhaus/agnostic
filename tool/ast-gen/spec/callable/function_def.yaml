@@ -1,0 +1,14 @@
+FunctionDef:
+  is:
+    - CallableDef
+  properties:
+    name:
+      type: string
+    arguments:
+      type: list
+      elementType:
+        type: ArgumentDef
+    block:
+      type: Block
+    returnType:
+      type: Type

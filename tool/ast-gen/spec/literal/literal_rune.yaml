@@ -1,0 +1,7 @@
+LiteralRune:
+  is:
+    - ConstantValue
+    - Value
+  properties:
+    value:
+      type: rune

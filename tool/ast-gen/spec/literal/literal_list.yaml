@@ -1,0 +1,9 @@
+LiteralList:
+  is:
+    - ConstantValue
+    - Value
+  properties:
+    value:
+      type: list
+      elements:
+        type: Value

@@ -1,0 +1,6 @@
+HashOverride:
+  is:
+    - CallableDef
+  properties:
+    block:
+      type: Block

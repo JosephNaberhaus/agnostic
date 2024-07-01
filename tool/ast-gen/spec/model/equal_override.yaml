@@ -1,0 +1,9 @@
+EqualOverride:
+  is:
+    - CallableDef
+    - Definition
+  properties:
+    otherName:
+      type: string
+    block:
+      type: Block

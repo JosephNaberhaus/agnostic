@@ -1,0 +1,8 @@
+FunctionProperty:
+  is:
+    - Callable
+  properties:
+    of:
+      type: Value
+    name:
+      type: string

@@ -1,0 +1,8 @@
+ArgumentDef:
+  is:
+    - Definition
+  properties:
+    name:
+      type: string
+    type:
+      type: Type

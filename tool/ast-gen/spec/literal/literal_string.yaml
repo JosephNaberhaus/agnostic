@@ -1,0 +1,7 @@
+LiteralString:
+  is:
+    - ConstantValue
+    - Value
+  properties:
+    value:
+      type: string

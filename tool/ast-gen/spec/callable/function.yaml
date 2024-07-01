@@ -1,0 +1,6 @@
+Function:
+  is:
+    - Callable
+  properties:
+    name:
+      type: string

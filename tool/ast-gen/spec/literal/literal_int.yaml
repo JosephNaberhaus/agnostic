@@ -1,0 +1,7 @@
+LiteralInt:
+  is:
+    - ConstantValue
+    - Value
+  properties:
+    value:
+      type: int64

@@ -1,0 +1,16 @@
+ModelDef:
+  properties:
+    name:
+      type: string
+    fields:
+      type: FieldDef
+    methods:
+      type: MethodDef
+    equalOverride:
+      type: optional
+      elementType:
+        type: EqualOverride
+    hashOverride:
+      type: optional
+      elementType:
+        type: HashOverride

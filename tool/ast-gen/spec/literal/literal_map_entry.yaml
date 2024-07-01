@@ -1,0 +1,6 @@
+LiteralMapEntry:
+  properties:
+    key:
+      type: Value
+    value:
+      type: Value

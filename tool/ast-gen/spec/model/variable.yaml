@@ -1,0 +1,4 @@
+Variable:
+  properties:
+    name:
+      type: string

@@ -1,0 +1,6 @@
+FieldDef:
+  properties:
+    name:
+      type: string
+    type:
+      type: Type

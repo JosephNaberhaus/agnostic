@@ -1,0 +1,9 @@
+Property:
+  is:
+    - Assignable
+    - Value
+  properties:
+    of:
+      type: Value
+    name:
+      type: string
